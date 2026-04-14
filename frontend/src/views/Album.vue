@@ -1,0 +1,373 @@
+<template>
+  <div class="album-view">
+    <header class="header">
+      <div class="header-content">
+        <h1>{{ albumName }}</h1>
+        <p>🎨 {{ mediaList.length }} 个作品</p>
+      </div>
+      <el-button round @click="goBack">← 返回</el-button>
+    </header>
+
+    <div class="container">
+      <div class="filters">
+        <el-radio-group v-model="activeType" @change="handleTypeChange">
+          <el-radio-button label="all">全部</el-radio-button>
+          <el-radio-button label="image">图片</el-radio-button>
+          <el-radio-button label="video">视频</el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <div v-loading="loading" class="media-grid">
+        <div
+          v-for="media in filteredMediaList"
+          :key="media.id"
+          class="media-item"
+          @click="viewMedia(media.id)"
+        >
+          <div class="media-thumbnail">
+            <img
+              v-if="media.mediaType === 'image'"
+              :src="getMediaUrl(media.filePath)"
+              :alt="media.title"
+              loading="lazy"
+            />
+            <div v-else class="video-thumbnail">
+              <img :src="getMediaUrl(media.coverImage) || '/placeholder-video.png'" :alt="media.title" loading="lazy" />
+              <div class="play-overlay">
+                <div class="play-btn">▶</div>
+              </div>
+            </div>
+            <div class="media-type-badge">
+              {{ media.mediaType === 'image' ? '🖼️' : '🎬' }}
+            </div>
+          </div>
+          <div class="media-info">
+            <div class="media-title">{{ media.title || media.filename }}</div>
+            <div class="media-meta">
+              <span>{{ formatSize(media.fileSize) }}</span>
+              <span>{{ formatDate(media.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!loading && filteredMediaList.length === 0" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>还没有作品</p>
+        <p class="empty-hint">上传一些内容到这个相册吧~</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useMediaStore } from '../stores/media'
+
+const route = useRoute()
+const router = useRouter()
+const mediaStore = useMediaStore()
+
+const albumName = ref('')
+const activeType = ref('all')
+
+const mediaList = computed(() => mediaStore.mediaList)
+const loading = computed(() => mediaStore.loading)
+
+const filteredMediaList = computed(() => {
+  if (activeType.value === 'all') return mediaList.value
+  return mediaList.value.filter(m => m.mediaType === activeType.value)
+})
+
+const fetchAlbumData = async () => {
+  const albumId = route.params.id
+  await mediaStore.fetchMediaList(null, null, albumId)
+  const album = mediaStore.albums.find(a => a.id === parseInt(albumId))
+  if (album) {
+    albumName.value = album.name
+  } else {
+    albumName.value = '相册'
+  }
+}
+
+const handleTypeChange = () => {
+  fetchAlbumData()
+}
+
+const viewMedia = (id) => {
+  router.push({ name: 'MediaDetail', params: { id } })
+}
+
+const goBack = () => {
+  router.push({ name: 'Home' })
+}
+
+const getMediaUrl = (filePath) => {
+  if (!filePath) return ''
+  if (filePath.startsWith('http')) return filePath
+  return 'http://47.97.191.168' + (filePath.startsWith('/') ? '' : '/') + filePath
+}
+
+const formatSize = (bytes) => {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN')
+}
+
+onMounted(() => {
+  mediaStore.fetchAlbums().then(() => {
+    fetchAlbumData()
+  })
+})
+</script>
+
+<style lang="scss" scoped>
+.album-view {
+  min-height: 100vh;
+  background: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80') center/cover no-repeat;
+  position: relative;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, rgba(40, 60, 80, 0.7) 0%, rgba(20, 40, 60, 0.5) 100%);
+  backdrop-filter: blur(10px);
+
+  .header-content {
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #e3f2fd 50%, #bbdefb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
+
+  :deep(.el-button) {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    backdrop-filter: blur(5px);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  }
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+}
+
+.filters {
+  margin-bottom: 1.5rem;
+
+  :deep(.el-radio-button__inner) {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #333;
+
+    &:hover {
+      color: #29b6f6;
+    }
+  }
+
+  :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+    background: linear-gradient(135deg, #81d4fa 0%, #4fc3f7 100%);
+    border-color: #4fc3f7;
+    color: white;
+    box-shadow: 0 2px 8px rgba(79, 195, 247, 0.3);
+  }
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+
+.media-item {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #81d4fa;
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(79, 195, 247, 0.2);
+  }
+}
+
+.media-thumbnail {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+}
+
+.video-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .play-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .play-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #29b6f6;
+    }
+  }
+}
+
+.media-type-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 1.2rem;
+}
+
+.media-info {
+  padding: 1rem;
+
+  .media-title {
+    font-size: 0.95rem;
+    color: #29b6f6;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .media-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #81d4fa;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: white;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-hint {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 1.25rem 1rem;
+    flex-direction: column;
+    gap: 1rem;
+
+    .header-content {
+      text-align: center;
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      p {
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  .container {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+
+  .media-item {
+    border-radius: 12px;
+  }
+
+  .media-info {
+    padding: 0.75rem;
+
+    .media-title {
+      font-size: 0.85rem;
+    }
+  }
+}
+</style>
