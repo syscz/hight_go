@@ -14,7 +14,10 @@ public interface MediaRepository extends JpaRepository<Media, Long> {
     List<Media> findByCategoryId(Long categoryId);
     List<Media> findByAlbumId(Long albumId);
     List<Media> findByTitleContainingOrDescriptionContaining(String title, String description);
-    
+
+    List<Media> findByUserId(Long userId);
+    List<Media> findByAlbumIdAndUserId(Long albumId, Long userId);
+
     @Query("SELECT m FROM Media m JOIN m.tags t WHERE t.id = :tagId")
     List<Media> findByTagId(@Param("tagId") Long tagId);
 }

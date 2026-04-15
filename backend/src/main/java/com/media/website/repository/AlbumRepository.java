@@ -7,12 +7,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AlbumRepository extends JpaRepository<Album, Long> {
 
     Optional<Album> findByName(String name);
+
+    List<Album> findByUserId(Long userId);
 
     @Modifying
     @Query("UPDATE Album a SET a.mediaCount = a.mediaCount + 1 WHERE a.id = :id")

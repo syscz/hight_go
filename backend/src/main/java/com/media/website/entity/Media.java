@@ -49,6 +49,9 @@ public class Media {
     @JoinColumn(name = "album_id")
     private Album album;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Column(name = "cover_image")
     private String coverImage;
 

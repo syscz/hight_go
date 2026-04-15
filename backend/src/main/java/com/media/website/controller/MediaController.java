@@ -5,6 +5,7 @@ import com.media.website.entity.Media;
 import com.media.website.repository.MediaRepository;
 import com.media.website.service.AlbumService;
 import com.media.website.service.FileUploadService;
+import com.media.website.service.JwtService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/media")
+@RequestMapping("/api/media")
 public class MediaController {
 
     @Autowired
@@ -29,27 +30,56 @@ public class MediaController {
     @Autowired
     private AlbumService albumService;
 
+    @Autowired
+    private JwtService jwtService;
+
+    private Long getUserIdFromToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        String token = authHeader.substring(7);
+        if (!jwtService.validateToken(token)) {
+            return null;
+        }
+        return jwtService.getUserIdFromToken(token);
+    }
+
     @GetMapping
     public ResponseEntity<List<Media>> getMediaList(
             @RequestParam(required = false) Media.MediaType type,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long albumId) {
+            @RequestParam(required = false) Long albumId,
+            @RequestHeader("Authorization") String authHeader) {
+
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         List<Media> mediaList;
         if (albumId != null) {
-            mediaList = mediaRepository.findByAlbumId(albumId);
+            mediaList = mediaRepository.findByAlbumIdAndUserId(albumId, userId);
         } else if (type != null) {
             mediaList = mediaRepository.findByMediaType(type);
+            mediaList = mediaList.stream().filter(m -> userId.equals(m.getUserId())).toList();
         } else if (categoryId != null) {
             mediaList = mediaRepository.findByCategoryId(categoryId);
+            mediaList = mediaList.stream().filter(m -> userId.equals(m.getUserId())).toList();
         } else {
-            mediaList = mediaRepository.findAll();
+            mediaList = mediaRepository.findByUserId(userId);
         }
         return ResponseEntity.ok(mediaList);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Media> getMedia(@PathVariable Long id) {
+    public ResponseEntity<Media> getMedia(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         return mediaRepository.findById(id)
+                .filter(m -> userId.equals(m.getUserId()))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -60,7 +90,14 @@ public class MediaController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long albumId) {
+            @RequestParam(required = false) Long albumId,
+            @RequestHeader("Authorization") String authHeader) {
+
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         try {
             String fileUrl = fileUploadService.uploadFile(file);
 
@@ -72,6 +109,7 @@ public class MediaController {
             media.setFileType(file.getContentType());
             media.setTitle(title);
             media.setDescription(description);
+            media.setUserId(userId);
 
             String fileType = fileUploadService.getFileType(file.getOriginalFilename());
             if ("image".equals(fileType)) {
@@ -83,10 +121,10 @@ public class MediaController {
 
             Album album = null;
             if (albumId != null) {
-                album = albumService.getAlbumById(albumId).orElse(null);
+                album = albumService.getAlbumById(albumId, userId).orElse(null);
             }
             if (album == null) {
-                album = albumService.getDefaultAlbum();
+                album = albumService.getDefaultAlbum(userId);
             }
             media.setAlbum(album);
             albumService.incrementMediaCount(album.getId());
@@ -100,8 +138,14 @@ public class MediaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteMedia(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteMedia(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         return mediaRepository.findById(id)
+                .filter(m -> userId.equals(m.getUserId()))
                 .map(media -> {
                     try {
                         fileUploadService.deleteFile(media.getFilePath());
@@ -119,8 +163,14 @@ public class MediaController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Media>> searchMedia(@RequestParam String keyword) {
+    public ResponseEntity<List<Media>> searchMedia(@RequestParam String keyword, @RequestHeader("Authorization") String authHeader) {
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         List<Media> mediaList = mediaRepository.findByTitleContainingOrDescriptionContaining(keyword, keyword);
+        mediaList = mediaList.stream().filter(m -> userId.equals(m.getUserId())).toList();
         return ResponseEntity.ok(mediaList);
     }
 }

@@ -24,11 +24,14 @@ spring:
 # 应用配置
 server:
   port: 8081
-  servlet:
-    context-path: /api
 
 # 文件存储配置
 file:
   upload:
     path: /var/www/media/uploads
     url-prefix: /uploads
+
+# JWT配置
+jwt:
+  secret: hight-go-media-website-secret-key-2024
+  expiration: 86400000
