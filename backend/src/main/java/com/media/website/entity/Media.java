@@ -58,6 +58,15 @@ public class Media {
     @Column(name = "view_count", columnDefinition = "INT DEFAULT 0")
     private Integer viewCount;
 
+    @Column(name = "is_favorite", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isFavorite = false;
+
+    @Column(name = "is_deleted", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "media_tag",

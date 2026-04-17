@@ -2,7 +2,7 @@
   <div class="home">
     <header class="header">
       <div class="header-content">
-        <h1>我的相册</h1>
+        <h1>我的</h1>
         <p>记录美好瞬间</p>
       </div>
       <el-button type="primary" round @click="showCreateAlbumDialog">
@@ -10,34 +10,118 @@
       </el-button>
     </header>
 
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <el-radio-group v-model="viewMode" size="large" class="view-mode-group">
+          <el-radio-button label="albums">
+            <span class="radio-label">📁</span> 相册
+          </el-radio-button>
+          <el-radio-button label="all">
+            <span class="radio-label">📋</span> 全部
+          </el-radio-button>
+          <el-radio-button label="images">
+            <span class="radio-label">🖼️</span> 图片
+          </el-radio-button>
+          <el-radio-button label="videos">
+            <span class="radio-label">🎬</span> 视频
+          </el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="toolbar-right">
+        <div class="search-box">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索标题/描述..."
+            clearable
+            class="search-input"
+            @keyup.enter="handleSearch"
+          >
+            <template #prefix>
+              <span class="search-icon">🔍</span>
+            </template>
+          </el-input>
+          <el-button type="primary" class="search-btn" @click="handleSearch">
+            搜索
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="stats" class="stats-bar">
+      <span>总计: {{ stats.totalMedia }} 个</span>
+      <span>📷 {{ stats.imageCount }}</span>
+      <span>🎬 {{ stats.videoCount }}</span>
+      <span>❤️ {{ stats.favoriteCount }} 收藏</span>
+      <span>📦 {{ formatSize(stats.totalSize) }}</span>
+    </div>
+
     <div class="container">
-      <div v-loading="loading" class="albums-grid">
-        <div
-          v-for="(album, index) in albums"
-          :key="album.id"
-          class="album-item"
-          :class="`album-item--color-${index % 5}`"
-          @click="viewAlbum(album.id)"
-        >
-          <div class="album-icon">📁</div>
-          <div class="album-name">{{ album.name }}</div>
-          <div class="album-count">🎨 {{ album.mediaCount || 0 }} 个作品</div>
-          <el-button
-            v-if="album.name !== '默认相册'"
-            type="danger"
-            :icon="Delete"
-            circle
-            size="small"
-            class="delete-btn"
-            @click.stop="handleDeleteAlbum(album.id)"
-          />
+      <div v-if="viewMode === 'albums'">
+        <div v-loading="loading" class="albums-grid">
+          <div
+            v-for="(album, index) in albums"
+            :key="album.id"
+            class="album-item"
+            :class="`album-item--color-${index % 5}`"
+            @click="viewAlbum(album.id)"
+          >
+            <div class="album-icon">📁</div>
+            <div class="album-name">{{ album.name }}</div>
+            <div class="album-count">🎨 {{ album.mediaCount || 0 }} 个作品</div>
+            <el-button
+              v-if="album.name !== '默认相册'"
+              type="danger"
+              :icon="Delete"
+              circle
+              size="small"
+              class="delete-btn"
+              @click.stop="handleDeleteAlbum(album.id)"
+            />
+          </div>
         </div>
       </div>
 
-      <div v-if="!loading && albums.length === 0" class="empty-state">
-        <div class="empty-icon">🎉</div>
-        <p>还没有相册</p>
-        <p class="empty-hint">点击上方按钮创建你的第一个相册吧！</p>
+      <div v-else>
+        <div class="batch-actions" v-if="selectedMedia.length > 0">
+          <span>已选择 {{ selectedMedia.length }} 项</span>
+          <el-button size="small" @click="clearSelection">取消选择</el-button>
+          <el-button size="small" type="primary" @click="showMoveDialog">移动到</el-button>
+          <el-button size="small" type="danger" @click="batchDelete">移入回收站</el-button>
+        </div>
+        <div v-loading="loading" class="media-grid">
+          <div
+            v-for="item in mediaList"
+            :key="item.id"
+            class="media-item"
+            :class="{ selected: selectedMedia.includes(item.id) }"
+            @click="goToDetail(item.id)"
+            @click.meta="toggleSelect(item.id, $event)"
+          >
+            <input
+              type="checkbox"
+              :checked="selectedMedia.includes(item.id)"
+              @click.stop
+              @change="toggleSelect(item.id)"
+              class="media-checkbox"
+            />
+            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" />
+            <video v-else :src="getCoverUrl(item)" />
+            <div class="media-overlay">
+              <span class="media-title">{{ item.title || item.filename }}</span>
+            </div>
+            <button
+              class="favorite-btn"
+              :class="{ active: item.isFavorite }"
+              @click.stop="toggleFavorite(item)"
+            >
+              {{ item.isFavorite ? '♥' : '♡' }}
+            </button>
+          </div>
+        </div>
+        <div v-if="!loading && mediaList.length === 0" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <p>没有找到内容</p>
+        </div>
       </div>
     </div>
 
@@ -65,6 +149,21 @@
         <el-button type="primary" round @click="handleCreateAlbum">创建！</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="moveDialogVisible" title="移动到相册" width="360px">
+      <el-select v-model="targetAlbumId" placeholder="选择目标相册" style="width: 100%">
+        <el-option
+          v-for="album in albums"
+          :key="album.id"
+          :label="album.name"
+          :value="album.id"
+        />
+      </el-select>
+      <template #footer>
+        <el-button @click="moveDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleMove">移动</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -74,12 +173,21 @@ import { useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import api from '@/api/index'
 
 const router = useRouter()
 const mediaStore = useMediaStore()
 
 const albums = computed(() => mediaStore.albums)
 const loading = computed(() => mediaStore.loading)
+
+const viewMode = ref('albums')
+const searchKeyword = ref('')
+const mediaList = ref([])
+const stats = ref(null)
+const selectedMedia = ref([])
+const moveDialogVisible = ref(false)
+const targetAlbumId = ref(null)
 
 const createAlbumDialogVisible = ref(false)
 const newAlbumName = ref('')
@@ -134,8 +242,119 @@ const handleDeleteAlbum = async (albumId) => {
   }
 }
 
+const fetchStats = async () => {
+  try {
+    const response = await api.get('/media/stats')
+    stats.value = response.data
+  } catch (error) {
+    console.error('获取统计失败', error)
+  }
+}
+
+const fetchMediaList = async () => {
+  try {
+    const params = {}
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    if (viewMode.value === 'images') params.type = 'image'
+    if (viewMode.value === 'videos') params.type = 'video'
+    const response = await api.get('/media', params)
+    mediaList.value = response.data
+  } catch (error) {
+    ElMessage.error('获取媒体列表失败')
+  }
+}
+
+const handleSearch = () => {
+  viewMode.value = 'all'
+  fetchMediaList()
+}
+
+const getCoverUrl = (item) => {
+  if (!item.coverImage) return ''
+  if (item.coverImage.startsWith('http')) return item.coverImage
+  return 'http://47.97.191.168' + (item.coverImage.startsWith('/') ? '' : '/') + item.coverImage
+}
+
+const goToDetail = (id) => {
+  router.push(`/media/${id}`)
+}
+
+const toggleFavorite = async (item) => {
+  try {
+    await api.post(`/media/${item.id}/favorite`)
+    fetchMediaList()
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+const toggleSelect = (id, event) => {
+  if (event && event.metaKey) {
+    if (selectedMedia.value.includes(id)) {
+      selectedMedia.value = selectedMedia.value.filter(i => i !== id)
+    } else {
+      selectedMedia.value.push(id)
+    }
+  } else {
+    if (selectedMedia.value.includes(id)) {
+      selectedMedia.value = selectedMedia.value.filter(i => i !== id)
+    } else {
+      selectedMedia.value.push(id)
+    }
+  }
+}
+
+const clearSelection = () => {
+  selectedMedia.value = []
+}
+
+const showMoveDialog = () => {
+  targetAlbumId.value = null
+  moveDialogVisible.value = true
+}
+
+const handleMove = async () => {
+  if (!targetAlbumId.value) {
+    ElMessage.warning('请选择目标相册')
+    return
+  }
+  try {
+    await api.post('/media/batch/move', {
+      mediaIds: selectedMedia.value,
+      albumId: targetAlbumId.value
+    })
+    ElMessage.success('移动成功')
+    moveDialogVisible.value = false
+    selectedMedia.value = []
+    fetchMediaList()
+  } catch (error) {
+    ElMessage.error('移动失败')
+  }
+}
+
+const batchDelete = async () => {
+  try {
+    await ElMessageBox.confirm(`确定将 ${selectedMedia.value.length} 项移入回收站吗？`, '提示', { type: 'warning' })
+    await api.post('/media/batch/delete', { mediaIds: selectedMedia.value })
+    ElMessage.success('已移入回收站')
+    selectedMedia.value = []
+    fetchMediaList()
+  } catch (error) {
+    if (error !== 'cancel') ElMessage.error('操作失败')
+  }
+}
+
+const formatSize = (bytes) => {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
 onMounted(() => {
   fetchAlbums()
+  fetchStats()
 })
 </script>
 
@@ -199,6 +418,11 @@ onMounted(() => {
   max-width: 900px;
   margin: 0 auto;
   padding: 1rem 2rem 3rem;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .albums-grid {
@@ -288,48 +512,348 @@ onMounted(() => {
   }
 }
 
+.toolbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  margin: 1rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  .toolbar-left {
+    .view-mode-group {
+      :deep(.el-radio-button__inner) {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        margin-right: 0.5rem;
+        transition: all 0.2s ease;
+        box-shadow: none;
+
+        .radio-label {
+          margin-right: 0.3rem;
+        }
+
+        &:hover {
+          color: white;
+          border-color: rgba(255, 255, 255, 0.5);
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+        background: rgba(129, 212, 250, 0.4);
+        border-color: #81d4fa;
+        color: white;
+        box-shadow: 0 2px 8px rgba(129, 212, 250, 0.3);
+      }
+
+      :deep(.el-radio-button:first-child .el-radio-button__inner) {
+        border-radius: 8px;
+      }
+
+      :deep(.el-radio-button:last-child .el-radio-button__inner) {
+        border-radius: 8px;
+      }
+    }
+  }
+
+  .toolbar-right {
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+
+      .search-input {
+        width: 240px;
+
+        :deep(.el-input__wrapper) {
+          border-radius: 10px;
+          padding: 4px 12px;
+          background: rgba(255, 255, 255, 0.1);
+          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+          transition: all 0.2s ease;
+
+          &:hover {
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+          }
+
+          &.is-focus {
+            box-shadow: 0 0 0 2px #81d4fa;
+            background: rgba(255, 255, 255, 0.2);
+          }
+        }
+
+        :deep(.el-input__inner) {
+          color: white;
+          &::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+          }
+        }
+
+        .search-icon {
+          font-size: 1rem;
+        }
+      }
+
+      .search-btn {
+        background: rgba(129, 212, 250, 0.4);
+        border: 1px solid #81d4fa;
+        color: white;
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(129, 212, 250, 0.25);
+
+        &:hover {
+          background: rgba(129, 212, 250, 0.5);
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+}
+
+.stats-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.85rem 2rem;
+  margin: 0 2.5rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.media-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  &.selected {
+    outline: 3px solid #81d4fa;
+  }
+
+  img, video {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+  }
+
+  .media-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .media-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    padding: 1.5rem 0.5rem 0.5rem;
+    .media-title {
+      color: white;
+      font-size: 0.85rem;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .favorite-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.3);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    &.active {
+      color: #ff6b6b;
+    }
+  }
+}
+
+.batch-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(40,60,80,0.1);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  span {
+    color: #333;
+    font-weight: 500;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
-    padding: 1.25rem 1rem;
+    padding: 1rem;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
 
     .header-content {
       text-align: center;
 
       h1 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
       }
 
       p {
         font-size: 0.8rem;
       }
     }
+
+    .el-button {
+      padding: 0.5rem 1rem;
+    }
+  }
+
+  .toolbar {
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+
+    .toolbar-left {
+      .view-mode-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+
+        :deep(.el-radio-button__inner) {
+          padding: 0.4rem 0.75rem;
+          font-size: 0.8rem;
+          margin-right: 0;
+        }
+      }
+    }
+
+    .toolbar-right {
+      width: 100%;
+
+      .search-box {
+        flex-direction: column;
+        width: 100%;
+
+        .search-input {
+          width: 100%;
+
+          :deep(.el-input__wrapper) {
+            width: 100%;
+          }
+        }
+
+        .search-btn {
+          width: 100%;
+          margin-top: 0.5rem;
+        }
+      }
+    }
+  }
+
+  .stats-bar {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0 1rem 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    justify-content: center;
   }
 
   .container {
-    padding: 1rem 1rem 2rem;
+    padding: 0.75rem 1rem 2rem;
+    margin: 0 1rem;
   }
 
   .albums-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .album-item {
-    padding: 1.25rem 1rem;
+    padding: 1rem 0.75rem;
 
     .album-icon {
-      font-size: 2rem;
+      font-size: 1.75rem;
     }
 
     .album-name {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     .album-count {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
+  }
+
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .batch-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    justify-content: center;
   }
 }
 

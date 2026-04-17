@@ -29,6 +29,24 @@ const routes = [
     path: '/auth',
     name: 'Auth',
     component: () => import('../views/Auth.vue')
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: () => import('../views/Favorites.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/timeline',
+    name: 'Timeline',
+    component: () => import('../views/Timeline.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/trash',
+    name: 'Trash',
+    component: () => import('../views/Trash.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

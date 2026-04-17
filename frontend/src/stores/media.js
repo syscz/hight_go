@@ -127,6 +127,24 @@ export const useMediaStore = defineStore('media', {
       } finally {
         this.loading = false
       }
+    },
+
+    async batchMoveMedia(mediaIds, albumId) {
+      try {
+        await api.post('/media/batch/move', { mediaIds, albumId })
+      } catch (error) {
+        console.error('移动媒体失败:', error)
+        throw error
+      }
+    },
+
+    async batchDeleteMedia(mediaIds) {
+      try {
+        await api.post('/media/batch/delete', { mediaIds })
+      } catch (error) {
+        console.error('删除媒体失败:', error)
+        throw error
+      }
     }
   }
 })

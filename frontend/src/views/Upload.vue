@@ -20,7 +20,7 @@
           </div>
           <template #tip>
             <div class="el-upload__tip">
-              支持批量上传图片和视频，单个文件大小不超过100MB<br/>
+              支持批量上传图片和视频，单个文件大小不超过2G<br/>
               上传数量: <span class="file-count">{{ fileList.length }}</span> 个文件
             </div>
           </template>
@@ -283,6 +283,52 @@ onMounted(() => {
         color: #909399;
         margin-top: 0.25rem;
         text-align: right;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .upload {
+    padding: 1rem;
+    margin: 0.5rem;
+    border-radius: 12px;
+
+    h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    :deep(.el-form-item) {
+      margin-bottom: 1rem;
+    }
+
+    :deep(.el-form-item__label) {
+      width: 70px !important;
+      font-size: 0.85rem;
+    }
+
+    :deep(.el-form-item__content) {
+      margin-left: 70px !important;
+      font-size: 0.85rem;
+    }
+
+    :deep(.el-upload-dragger) {
+      padding: 1.5rem 1rem;
+    }
+
+    :deep(.el-button--primary) {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    :deep(.el-button:not(.el-button--primary)) {
+      width: 100%;
+    }
+
+    .upload-progress {
+      .progress-item {
+        padding: 0.5rem;
       }
     }
   }

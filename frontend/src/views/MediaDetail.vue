@@ -1,5 +1,5 @@
 <template>
-  <div class="media-detail">
+  <div class="media-detail" tabindex="0" @keydown="handleKeydown">
     <el-button @click="goBack" class="back-button">
       <el-icon><ArrowLeft /></el-icon> 返回
     </el-button>
@@ -40,14 +40,53 @@
             {{ media.viewCount || 0 }} 次查看
           </span>
         </div>
+        <div class="info-actions">
+          <el-button :type="media.isFavorite ? 'danger' : 'default'" @click="toggleFavorite">
+            {{ media.isFavorite ? '♥ 取消收藏' : '♡ 收藏' }}
+          </el-button>
+          <el-button type="danger" @click="handleDelete">
+            <el-icon><Delete /></el-icon> 删除
+          </el-button>
+        </div>
         <div class="info-description">
           <h3>描述</h3>
           <p>{{ media.description || '无描述' }}</p>
         </div>
-        <div class="info-actions">
-          <el-button type="danger" @click="handleDelete">
-            <el-icon><Delete /></el-icon> 删除
-          </el-button>
+
+        <div class="comments-section">
+          <h3>评论 ({{ comments.length }})</h3>
+          <div class="comment-input">
+            <el-input
+              v-model="newComment"
+              type="textarea"
+              placeholder="写下你的评论..."
+              :rows="2"
+            />
+            <el-button type="primary" size="small" @click="submitComment" :disabled="!newComment.trim()">
+              发布
+            </el-button>
+          </div>
+          <div class="comments-list">
+            <div v-for="comment in comments" :key="comment.id" class="comment-item">
+              <div class="comment-header">
+                <span class="comment-user">{{ comment.username }}</span>
+                <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
+                <el-button
+                  v-if="comment.userId === currentUserId"
+                  type="danger"
+                  size="small"
+                  link
+                  @click="deleteComment(comment.id)"
+                >
+                  删除
+                </el-button>
+              </div>
+              <div class="comment-content">{{ comment.content }}</div>
+            </div>
+            <div v-if="comments.length === 0" class="no-comments">
+              暂无评论，来发表第一条评论吧！
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -79,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Calendar, Document, View, Delete } from '@element-plus/icons-vue'
@@ -93,6 +132,47 @@ const loading = ref(true)
 const showLightbox = ref(false)
 const scale = ref(1)
 const lightboxImg = ref(null)
+const comments = ref([])
+const newComment = ref('')
+const currentUserId = ref(null)
+
+const currentMediaIndex = ref(0)
+const allMediaList = ref([])
+
+const handleKeydown = (e) => {
+  if (e.key === 'ArrowLeft') {
+    navigatePrev()
+  } else if (e.key === 'ArrowRight') {
+    navigateNext()
+  } else if (e.key === 'Escape') {
+    showLightbox.value = false
+  }
+}
+
+const fetchAllMedia = async () => {
+  try {
+    const response = await api.get('/media')
+    allMediaList.value = response.data
+    const currentId = parseInt(route.params.id)
+    currentMediaIndex.value = allMediaList.value.findIndex(m => m.id === currentId)
+  } catch (error) {
+    console.error('获取媒体列表失败', error)
+  }
+}
+
+const navigatePrev = () => {
+  if (currentMediaIndex.value > 0) {
+    const prevMedia = allMediaList.value[currentMediaIndex.value - 1]
+    router.push(`/media/${prevMedia.id}`)
+  }
+}
+
+const navigateNext = () => {
+  if (currentMediaIndex.value < allMediaList.value.length - 1) {
+    const nextMedia = allMediaList.value[currentMediaIndex.value + 1]
+    router.push(`/media/${nextMedia.id}`)
+  }
+}
 
 const handleWheel = (e) => {
   if (e.deltaY < 0) {
@@ -165,8 +245,60 @@ const formatDate = (dateString) => {
   return date.toLocaleString()
 }
 
+const toggleFavorite = async () => {
+  try {
+    await api.post(`/media/${media.value.id}/favorite`)
+    fetchMediaDetail()
+    fetchAllMedia()
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+const fetchComments = async () => {
+  try {
+    const response = await api.get(`/comments/media/${route.params.id}`)
+    comments.value = response.data
+  } catch (error) {
+    console.error('获取评论失败', error)
+  }
+}
+
+const submitComment = async () => {
+  if (!newComment.value.trim()) return
+  try {
+    await api.post('/comments', {
+      mediaId: route.params.id,
+      content: newComment.value
+    })
+    newComment.value = ''
+    fetchComments()
+    ElMessage.success('评论发布成功')
+  } catch (error) {
+    ElMessage.error('发布评论失败')
+  }
+}
+
+const deleteComment = async (commentId) => {
+  try {
+    await api.delete(`/comments/${commentId}`)
+    fetchComments()
+    ElMessage.success('删除成功')
+  } catch (error) {
+    ElMessage.error('删除失败')
+  }
+}
+
 onMounted(() => {
   fetchMediaDetail()
+  fetchComments()
+  fetchAllMedia()
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    const user = JSON.parse(userStr)
+    currentUserId.value = user.id
+  }
+  document.querySelector('.media-detail').focus()
 })
 </script>
 
@@ -252,6 +384,67 @@ onMounted(() => {
     .info-actions {
       display: flex;
       gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  .comments-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+
+    h3 {
+      font-size: 1rem;
+      color: #333;
+      margin: 0 0 1rem 0;
+    }
+
+    .comment-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+
+      .el-textarea {
+        flex: 1;
+      }
+    }
+
+    .comments-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .comment-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f0f0f0;
+
+      .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+
+        .comment-user {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .comment-time {
+          color: #999;
+          font-size: 0.85rem;
+        }
+      }
+
+      .comment-content {
+        color: #666;
+        line-height: 1.5;
+      }
+    }
+
+    .no-comments {
+      text-align: center;
+      color: #999;
+      padding: 1rem;
     }
   }
 }

@@ -5,11 +5,20 @@
         <h1>{{ albumName }}</h1>
         <p>🎨 {{ mediaList.length }} 个作品</p>
       </div>
-      <el-button round @click="goBack">← 返回</el-button>
+      <div class="header-actions">
+        <el-button round @click="goBack">← 返回</el-button>
+      </div>
     </header>
 
     <div class="container">
-      <div class="filters">
+      <div v-if="selectedIds.length > 0" class="batch-actions">
+        <span class="selected-count">已选择 {{ selectedIds.length }} 项</span>
+        <el-button type="primary" @click="handleBatchMove">移动到</el-button>
+        <el-button type="danger" @click="handleBatchDelete">删除</el-button>
+        <el-button @click="clearSelection">取消</el-button>
+      </div>
+
+      <div class="filters" v-else>
         <el-radio-group v-model="activeType" @change="handleTypeChange">
           <el-radio-button label="all">全部</el-radio-button>
           <el-radio-button label="image">图片</el-radio-button>
@@ -22,8 +31,13 @@
           v-for="media in filteredMediaList"
           :key="media.id"
           class="media-item"
-          @click="viewMedia(media.id)"
+          :class="{ selected: selectedIds.includes(media.id) }"
+          @click="handleItemClick(media.id)"
+          @click.right.prevent="toggleSelection(media.id)"
         >
+          <div class="media-checkbox" @click.stop="toggleSelection(media.id)">
+            <el-checkbox v-model="selectedIds" :value="media.id" />
+          </div>
           <div class="media-thumbnail">
             <img
               v-if="media.mediaType === 'image'"
@@ -51,6 +65,21 @@
         </div>
       </div>
 
+      <el-dialog v-model="moveDialogVisible" title="移动到相册" width="400px">
+        <el-select v-model="targetAlbumId" placeholder="选择目标相册" style="width: 100%">
+          <el-option
+            v-for="album in otherAlbums"
+            :key="album.id"
+            :label="album.name"
+            :value="album.id"
+          />
+        </el-select>
+        <template #footer>
+          <el-button @click="moveDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmMove" :disabled="!targetAlbumId">确认移动</el-button>
+        </template>
+      </el-dialog>
+
       <div v-if="!loading && filteredMediaList.length === 0" class="empty-state">
         <div class="empty-icon">📭</div>
         <p>还没有作品</p>
@@ -64,6 +93,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,9 +101,16 @@ const mediaStore = useMediaStore()
 
 const albumName = ref('')
 const activeType = ref('all')
+const selectedIds = ref([])
+const moveDialogVisible = ref(false)
+const targetAlbumId = ref(null)
 
 const mediaList = computed(() => mediaStore.mediaList)
 const loading = computed(() => mediaStore.loading)
+
+const otherAlbums = computed(() => {
+  return mediaStore.albums.filter(a => a.id !== parseInt(route.params.id))
+})
 
 const filteredMediaList = computed(() => {
   if (activeType.value === 'all') return mediaList.value
@@ -93,6 +130,63 @@ const fetchAlbumData = async () => {
 
 const handleTypeChange = () => {
   fetchAlbumData()
+}
+
+const handleItemClick = (id) => {
+  if (selectedIds.value.length > 0) {
+    toggleSelection(id)
+  } else {
+    viewMedia(id)
+  }
+}
+
+const toggleSelection = (id) => {
+  const index = selectedIds.value.indexOf(id)
+  if (index > -1) {
+    selectedIds.value.splice(index, 1)
+  } else {
+    selectedIds.value.push(id)
+  }
+}
+
+const clearSelection = () => {
+  selectedIds.value = []
+}
+
+const handleBatchMove = () => {
+  targetAlbumId.value = null
+  moveDialogVisible.value = true
+}
+
+const confirmMove = async () => {
+  if (!targetAlbumId.value) return
+  try {
+    await mediaStore.batchMoveMedia(selectedIds.value, targetAlbumId.value)
+    ElMessage.success('移动成功')
+    moveDialogVisible.value = false
+    selectedIds.value = []
+    await fetchAlbumData()
+  } catch (error) {
+    ElMessage.error('移动失败')
+  }
+}
+
+const handleBatchDelete = async () => {
+  try {
+    await ElMessageBox.confirm(`确定要将 ${selectedIds.value.length} 个文件移入回收站吗？`, '确认删除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await mediaStore.batchDeleteMedia(selectedIds.value)
+    ElMessage.success('已移入回收站')
+    selectedIds.value = []
+    await fetchAlbumData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const viewMedia = (id) => {
@@ -214,11 +308,12 @@ onMounted(() => {
 .media-item {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid transparent;
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 
   &:hover {
     border-color: #81d4fa;
@@ -226,12 +321,33 @@ onMounted(() => {
     transform: translateY(-4px);
     box-shadow: 0 8px 25px rgba(79, 195, 247, 0.2);
   }
+
+  &.selected {
+    border-color: #29b6f6;
+    background: rgba(41, 182, 246, 0.1);
+    box-shadow: 0 4px 15px rgba(41, 182, 246, 0.3);
+  }
+}
+
+.media-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.media-item:hover .media-checkbox,
+.media-item.selected .media-checkbox {
+  opacity: 1;
 }
 
 .media-thumbnail {
   position: relative;
   aspect-ratio: 1;
   overflow: hidden;
+  z-index: 1;
 
   img {
     width: 100%;
