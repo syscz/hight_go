@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.media.website.mapper.AlbumMapper">
+
+    <sql id="albumColumns">
+        id, name, description, cover_image, media_count, user_id, created_at, updated_at
+    </sql>
+
+    <select id="findByUserId" resultType="Album">
+        SELECT <include refid="albumColumns"/>
+        FROM albums
+        WHERE user_id = #{userId}
+        ORDER BY id
+    </select>
+
+    <select id="findById" resultType="Album">
+        SELECT <include refid="albumColumns"/>
+        FROM albums
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByName" resultType="Album">
+        SELECT <include refid="albumColumns"/>
+        FROM albums
+        WHERE name = #{name}
+        ORDER BY id
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="Album" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO albums (name, description, cover_image, media_count, user_id, created_at, updated_at)
+        VALUES (#{name}, #{description}, #{coverImage}, #{mediaCount}, #{userId}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="Album">
+        UPDATE albums
+        SET name = #{name}, description = #{description}, cover_image = #{coverImage}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM albums WHERE id = #{id}
+    </delete>
+
+    <update id="incrementMediaCount">
+        UPDATE albums
+        SET media_count = COALESCE(media_count, 0) + 1, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="decrementMediaCount">
+        UPDATE albums
+        SET media_count = GREATEST(COALESCE(media_count, 0) - 1, 0), updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

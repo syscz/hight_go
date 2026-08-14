@@ -168,14 +168,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
 import api from '@/api/index'
 
 const router = useRouter()
+const route = useRoute()
 const mediaStore = useMediaStore()
 
 const albums = computed(() => mediaStore.albums)
@@ -266,7 +267,6 @@ const fetchMediaList = async () => {
 
 const handleSearch = () => {
   viewMode.value = 'all'
-  fetchMediaList()
 }
 
 const getCoverUrl = (item) => {
@@ -276,8 +276,21 @@ const getCoverUrl = (item) => {
 }
 
 const goToDetail = (id) => {
-  router.push(`/media/${id}`)
+  router.push({
+    path: `/media/${id}`,
+    query: {
+      from: 'home',
+      viewMode: viewMode.value,
+      keyword: searchKeyword.value
+    }
+  })
 }
+
+watch(viewMode, (mode) => {
+  if (mode !== 'albums') {
+    fetchMediaList()
+  }
+})
 
 const toggleFavorite = async (item) => {
   try {
@@ -353,8 +366,14 @@ const formatSize = (bytes) => {
 }
 
 onMounted(() => {
+  const q = route.query
+  if (q.viewMode) viewMode.value = q.viewMode
+  if (q.keyword) searchKeyword.value = q.keyword
   fetchAlbums()
   fetchStats()
+  if (viewMode.value !== 'albums') {
+    fetchMediaList()
+  }
 })
 </script>
 

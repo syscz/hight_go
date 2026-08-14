@@ -1,0 +1,43 @@
+package com.media.website.mapper;
+
+import com.media.website.entity.Media;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Mapper
+public interface MediaMapper {
+
+    Media findById(@Param("id") Long id);
+
+    List<Media> findByUserIdAndIsDeleted(@Param("userId") Long userId, @Param("isDeleted") boolean isDeleted);
+
+    List<Media> findByUserIdAndIsFavorite(@Param("userId") Long userId, @Param("isFavorite") boolean isFavorite);
+
+    List<Media> findByAlbumIdAndUserId(@Param("albumId") Long albumId, @Param("userId") Long userId);
+
+    List<Media> findByUserIdAndCategoryId(@Param("userId") Long userId, @Param("categoryId") Long categoryId);
+
+    List<Media> findByUserIdAndMediaTypeAndIsDeleted(@Param("userId") Long userId,
+                                                     @Param("mediaType") Media.MediaType mediaType,
+                                                     @Param("isDeleted") boolean isDeleted);
+
+    List<Media> searchByKeyword(@Param("userId") Long userId, @Param("keyword") String keyword);
+
+    Long getTotalFileSizeByUserId(@Param("userId") Long userId);
+
+    int insert(Media media);
+
+    int updateFavorite(@Param("id") Long id, @Param("isFavorite") boolean isFavorite);
+
+    int updateDeleted(@Param("id") Long id, @Param("isDeleted") boolean isDeleted,
+                      @Param("deletedAt") LocalDateTime deletedAt);
+
+    int restore(@Param("id") Long id);
+
+    int updateAlbum(@Param("id") Long id, @Param("albumId") Long albumId);
+
+    int deleteById(@Param("id") Long id);
+}

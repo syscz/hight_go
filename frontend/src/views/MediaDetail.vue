@@ -223,7 +223,7 @@ const handleDelete = async () => {
   try {
     await api.delete(`/media/${media.value.id}`)
     ElMessage.success('删除成功')
-    router.push('/')
+    goBack()
   } catch (error) {
     console.error('删除媒体失败:', error)
     ElMessage.error('删除失败')
@@ -231,7 +231,25 @@ const handleDelete = async () => {
 }
 
 const goBack = () => {
-  router.push('/')
+  if (route.query.from === 'album') {
+    router.push({ name: 'Album', params: { id: route.query.albumId } })
+    return
+  }
+  if (route.query.from === 'home') {
+    router.push({
+      path: '/',
+      query: {
+        viewMode: route.query.viewMode || 'all',
+        keyword: route.query.keyword || ''
+      }
+    })
+    return
+  }
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
 }
 
 const formatSize = (size) => {

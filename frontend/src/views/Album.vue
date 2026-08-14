@@ -190,7 +190,11 @@ const handleBatchDelete = async () => {
 }
 
 const viewMedia = (id) => {
-  router.push({ name: 'MediaDetail', params: { id } })
+  router.push({
+    name: 'MediaDetail',
+    params: { id },
+    query: { from: 'album', albumId: route.params.id }
+  })
 }
 
 const goBack = () => {

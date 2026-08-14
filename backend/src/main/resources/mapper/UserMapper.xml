@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.media.website.mapper.UserMapper">
+
+    <sql id="userColumns">
+        id, username, password, role, created_at, updated_at
+    </sql>
+
+    <select id="findByUsername" resultType="User">
+        SELECT <include refid="userColumns"/>
+        FROM users
+        WHERE username = #{username}
+    </select>
+
+    <select id="findById" resultType="User">
+        SELECT <include refid="userColumns"/>
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="countByUsername" resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        WHERE username = #{username}
+    </select>
+
+    <insert id="insert" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, password, role, created_at, updated_at)
+        VALUES (#{username}, #{password}, #{role}, NOW(), NOW())
+    </insert>
+
+</mapper>

@@ -6,20 +6,18 @@ spring:
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # JPA配置
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
   # 文件上传配置
   servlet:
     multipart:
       max-file-size: 2GB
     max-request-size: 2GB
+
+# MyBatis 配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.media.website.entity
+  configuration:
+    map-underscore-to-camel-case: true
 
 # 应用配置
 server:

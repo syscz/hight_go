@@ -1,28 +1,28 @@
 package com.media.website.controller;
 
-import com.media.website.entity.Category;
-import com.media.website.repository.CategoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.media.website.service.CategoryService;
+import com.media.website.vo.CategoryVO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/categories")
+@RequestMapping("/api/categories")
+@RequiredArgsConstructor
 public class CategoryController {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
 
-    /**
-     * 获取分类列表
-     */
     @GetMapping
-    public ResponseEntity<List<Category>> getCategoryList() {
-        List<Category> categories = categoryRepository.findAll();
+    public ResponseEntity<List<CategoryVO>> getCategoryList() {
+        List<CategoryVO> categories = categoryService.getCategoryList().stream()
+                .map(CategoryVO::from)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(categories);
     }
 }
