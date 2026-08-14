@@ -1,42 +1,60 @@
 <template>
   <div class="app">
-    <header class="header">
-      <div class="container">
-        <h1 class="logo">SEE</h1>
-        <nav>
-          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换到浅色' : '切换到深色'">
-            {{ isDark ? '☀️' : '🌙' }}
-          </button>
-          <router-link to="/" class="nav-link">首页</router-link>
-          <router-link to="/upload" class="nav-link">上传</router-link>
-          <router-link to="/favorites" class="nav-link">收藏</router-link>
-          <router-link to="/timeline" class="nav-link">时间线</router-link>
-          <router-link to="/calendar" class="nav-link">日历</router-link>
-          <router-link to="/trash" class="nav-link">回收站</router-link>
-          <router-link to="/search" class="nav-link">搜索</router-link>
-          <span v-if="currentUser" class="user-info">
-            <span class="username">{{ currentUser.username }}</span>
-            <button @click="handleLogout" class="logout-btn">退出</button>
-          </span>
-        </nav>
+    <!-- 桌面侧边栏 -->
+    <aside class="sidebar">
+      <router-link to="/" class="sidebar-logo">SEE</router-link>
+      <nav class="sidebar-nav">
+        <router-link to="/" class="side-link">
+          <span class="side-icon">🖼</span><span>照片</span>
+        </router-link>
+        <router-link to="/?viewMode=albums" class="side-link">
+          <span class="side-icon">📁</span><span>相册</span>
+        </router-link>
+        <router-link to="/timeline" class="side-link">
+          <span class="side-icon">🕐</span><span>时间线</span>
+        </router-link>
+        <router-link to="/calendar" class="side-link">
+          <span class="side-icon">📅</span><span>日历</span>
+        </router-link>
+        <router-link to="/search" class="side-link">
+          <span class="side-icon">🔍</span><span>搜索</span>
+        </router-link>
+        <router-link to="/trash" class="side-link">
+          <span class="side-icon">🗑</span><span>回收站</span>
+        </router-link>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
+          {{ isDark ? '☀️' : '🌙' }}
+        </button>
+        <span v-if="currentUser" class="user-name">{{ currentUser.username }}</span>
+        <button v-if="currentUser" class="logout-btn" @click="handleLogout">退出</button>
       </div>
-    </header>
+    </aside>
 
-    <main class="main">
-      <div class="container">
+    <!-- 主内容 -->
+    <div class="main-area">
+      <header class="mobile-header">
+        <router-link to="/" class="mobile-logo">SEE</router-link>
+        <button class="theme-toggle" @click="toggleTheme">{{ isDark ? '☀️' : '🌙' }}</button>
+      </header>
+      <main class="main">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
-      </div>
-    </main>
+      </main>
+    </div>
 
-    <footer class="footer">
-      <div class="container">
-        <p>SEE</p>
-      </div>
-    </footer>
+    <!-- 移动端底部导航 -->
+    <nav class="mobile-nav">
+      <router-link to="/" class="mobile-link"><span>🖼</span><span>照片</span></router-link>
+      <router-link to="/?viewMode=albums" class="mobile-link"><span>📁</span><span>相册</span></router-link>
+      <router-link to="/search" class="mobile-link"><span>🔍</span><span>搜索</span></router-link>
+      <router-link to="/calendar" class="mobile-link"><span>📅</span><span>日历</span></router-link>
+      <router-link to="/timeline" class="mobile-link"><span>🕐</span><span>时间线</span></router-link>
+    </nav>
   </div>
 </template>
 
@@ -69,214 +87,259 @@ const handleLogout = () => {
 
 <style lang="scss">
 .app {
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  min-height: 100vh;
 }
 
-.header {
-  position: sticky;
+/* 桌面侧边栏 */
+.sidebar {
+  position: fixed;
   top: 0;
+  left: 0;
+  bottom: 0;
+  width: 210px;
+  background: rgba(10, 10, 12, 0.92);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem 0.75rem;
   z-index: 1000;
-  background: rgba(10, 14, 20, 0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 
-  .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-    height: 64px;
-  }
-
-  .logo {
+  .sidebar-logo {
     font-size: 1.4rem;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 0.5rem 0.9rem 1.2rem;
     background: linear-gradient(135deg, #81d4fa 0%, #e0f7ff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    text-decoration: none;
   }
 
-  nav {
+  .sidebar-nav {
+    flex: 1;
     display: flex;
-    gap: 0.25rem;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.2rem;
 
-    .nav-link {
-      color: rgba(255, 255, 255, 0.85);
-      text-decoration: none;
-      padding: 0.5rem 1rem;
+    .side-link {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.55rem 0.9rem;
       border-radius: 8px;
-      transition: all 0.2s ease;
+      color: rgba(255, 255, 255, 0.72);
+      text-decoration: none;
+      font-size: 0.92rem;
       font-weight: 500;
-      font-size: 0.95rem;
-      position: relative;
+      transition: all 0.15s;
+
+      .side-icon {
+        font-size: 1.05rem;
+      }
 
       &:hover {
-        color: white;
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
       }
 
       &.router-link-active {
-        color: white;
-        background: rgba(129, 212, 250, 0.4);
+        background: rgba(79, 195, 247, 0.16);
+        color: #4fc3f7;
         font-weight: 600;
-        
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: 4px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 20px;
-          height: 3px;
-          background: #81d4fa;
-          border-radius: 2px;
-        }
-      }
-    }
-
-    .theme-toggle {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.2s;
-      margin-right: 0.25rem;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.22);
-        transform: scale(1.08);
-      }
-    }
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-left: 1rem;
-      padding-left: 1rem;
-      border-left: 1px solid rgba(255, 255, 255, 0.2);
-
-      .username {
-        font-size: 0.9rem;
-        color: #81d4fa;
-        font-weight: 600;
-      }
-
-      .logout-btn {
-        background: rgba(255, 255, 255, 0.15);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 0.35rem 0.85rem;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-weight: 500;
-
-        &:hover {
-          background: #fee2e2;
-          border-color: #fca5a5;
-          color: #dc2626;
-        }
       }
     }
   }
+
+  .sidebar-bottom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0.5rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    .theme-toggle,
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.85);
+      border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.16);
+      }
+    }
+
+    .user-name {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      margin-left: auto;
+    }
+  }
+}
+
+.main-area {
+  flex: 1;
+  margin-left: 210px;
+  min-width: 0;
 }
 
 .main {
-  flex: 1;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  max-width: 1500px;
+  margin: 0 auto;
+}
 
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0;
+.mobile-header {
+  display: none;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+/* 浅色主题侧边栏 */
+html[data-theme='light'] .sidebar {
+  background: rgba(255, 255, 255, 0.94);
+  border-right-color: rgba(15, 30, 50, 0.08);
+
+  .side-link {
+    color: rgba(15, 30, 50, 0.7);
+
+    &:hover {
+      background: rgba(15, 30, 50, 0.06);
+      color: #10233a;
+    }
+
+    &.router-link-active {
+      background: rgba(79, 195, 247, 0.16);
+      color: #0d86c9;
+    }
+  }
+
+  .sidebar-bottom {
+    border-top-color: rgba(15, 30, 50, 0.08);
+
+    .theme-toggle,
+    .logout-btn {
+      background: rgba(15, 30, 50, 0.06);
+      border-color: rgba(15, 30, 50, 0.12);
+      color: rgba(15, 30, 50, 0.8);
+    }
+
+    .user-name {
+      color: rgba(15, 30, 50, 0.6);
+    }
   }
 }
 
-.footer {
-  background: rgba(10, 14, 20, 0.65);
-  backdrop-filter: blur(10px);
-  padding: 1.25rem 0;
-  margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-  }
-}
-
+/* 移动端 */
 @media (max-width: 768px) {
-  .header {
-    .container {
-      flex-direction: column;
-      gap: 0.75rem;
-      padding: 0 1rem;
-      height: auto;
-    }
+  .sidebar {
+    display: none;
+  }
 
-    .logo {
+  .main-area {
+    margin-left: 0;
+  }
+
+  .mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    background: rgba(10, 10, 12, 0.9);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    .mobile-logo {
       font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #81d4fa 0%, #e0f7ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
     }
 
-    nav {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.25rem;
+    .theme-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: white;
+      border-radius: 8px;
+      padding: 0.35rem 0.6rem;
+      cursor: pointer;
+    }
+  }
 
-      .nav-link {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.85rem;
+  html[data-theme='light'] .mobile-header {
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom-color: rgba(15, 30, 50, 0.08);
+  }
+
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 10, 12, 0.94);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 900;
+    padding-bottom: env(safe-area-inset-bottom);
+
+    .mobile-link {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 0.55rem 0 0.4rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      font-size: 0.68rem;
+
+      span:first-child {
+        font-size: 1.1rem;
       }
 
-      .user-info {
-        width: 100%;
-        justify-content: center;
-        margin-left: 0;
-        padding-left: 0;
-        border-left: none;
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      &.router-link-active {
+        color: #4fc3f7;
+      }
+    }
+  }
+
+  html[data-theme='light'] .mobile-nav {
+    background: rgba(255, 255, 255, 0.96);
+    border-top-color: rgba(15, 30, 50, 0.08);
+
+    .mobile-link {
+      color: rgba(15, 30, 50, 0.55);
+
+      &.router-link-active {
+        color: #0d86c9;
       }
     }
   }
 
   .main {
-    padding: 0.75rem;
-  }
-
-  .footer {
-    padding: 1rem 0;
-
-    .container {
-      font-size: 0.8rem;
-    }
+    padding: 0.75rem 0.6rem calc(4.5rem + env(safe-area-inset-bottom));
   }
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
 
 .fade-enter-from,

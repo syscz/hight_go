@@ -1,15 +1,5 @@
 <template>
   <div class="home">
-    <header class="page-head">
-      <div class="page-head-left">
-        <h1>我的媒体库</h1>
-        <p>记录美好瞬间</p>
-      </div>
-      <el-button type="primary" round size="large" @click="showCreateAlbumDialog" class="hero-action">
-        <span class="btn-icon">➕</span> 新建
-      </el-button>
-    </header>
-
     <div class="toolbar">
       <div class="toolbar-left">
         <el-radio-group v-model="viewMode" size="large" class="view-mode-group">
@@ -29,6 +19,9 @@
       </div>
       <div class="toolbar-right">
         <div class="search-box">
+          <el-button type="primary" round @click="showCreateAlbumDialog" class="new-btn">
+            ➕ 新建
+          </el-button>
           <div class="view-layout-toggle">
             <el-radio-group v-model="viewLayout" size="large">
               <el-radio-button label="grid">▦</el-radio-button>
@@ -68,14 +61,6 @@
       </div>
     </div>
 
-    <div v-if="stats" class="stats-bar">
-      <span>总计: {{ animatedStats?.totalMedia ?? stats.totalMedia }} 个</span>
-      <span>📷 {{ stats.imageCount }}</span>
-      <span>🎬 {{ stats.videoCount }}</span>
-      <span>❤️ {{ stats.favoriteCount }} 收藏</span>
-      <span>📦 {{ formatSize(stats.totalSize) }}</span>
-    </div>
-
     <div class="container">
       <div v-if="viewMode === 'albums'">
         <div v-loading="loading" class="albums-grid">
@@ -106,14 +91,6 @@
       </div>
 
       <div v-else>
-        <div class="batch-actions" v-if="selectedMedia.length > 0">
-          <span>已选择 {{ selectedMedia.length }} 项</span>
-          <el-button size="small" @click="clearSelection">取消选择</el-button>
-          <el-button size="small" type="primary" @click="showMoveDialog">移动到</el-button>
-          <el-button size="small" @click="showEditDialog">编辑</el-button>
-          <el-button size="small" type="success" @click="batchDownload">下载</el-button>
-          <el-button size="small" type="danger" @click="batchDelete">移入回收站</el-button>
-        </div>
         <div v-if="loading" class="media-grid skeleton-grid">
           <div v-for="n in 8" :key="n" class="media-item skeleton-item">
             <el-skeleton animated>
@@ -158,18 +135,22 @@
           <div class="empty-icon">🔍</div>
           <p>没有找到内容</p>
         </div>
-        <div v-if="viewMode !== 'albums' && totalMedia > pageSize" class="pagination">
-          <el-pagination
-            background
-            layout="prev, pager, next"
-            :total="totalMedia"
-            :page-size="pageSize"
-            :current-page="currentPage"
-            @current-change="handlePageChange"
-          />
+        <div v-if="hasMore && !loading" ref="sentinel" class="scroll-sentinel">
+          <span>加载中…</span>
         </div>
       </div>
     </div>
+
+    <transition name="fade">
+      <div v-if="selectedMedia.length > 0" class="floating-actions">
+        <span class="sel-count">已选择 {{ selectedMedia.length }} 项</span>
+        <el-button size="small" @click="clearSelection">取消</el-button>
+        <el-button size="small" type="primary" @click="showMoveDialog">移动到</el-button>
+        <el-button size="small" @click="showEditDialog">编辑</el-button>
+        <el-button size="small" type="success" @click="batchDownload">下载</el-button>
+        <el-button size="small" type="danger" @click="batchDelete">删除</el-button>
+      </div>
+    </transition>
 
     <el-dialog v-model="createAlbumDialogVisible" title="创建新相册" width="360px" round align-center>
       <el-form @submit.prevent="handleCreateAlbum">
@@ -240,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -272,6 +253,8 @@ const editDialogVisible = ref(false)
 const editForm = ref({ title: '', description: '', tagIds: [] })
 const lightboxVisible = ref(false)
 const lightboxIndex = ref(0)
+const sentinel = ref(null)
+let observer = null
 const tags = computed(() => mediaStore.tags)
 let searchDebounce = null
 
@@ -364,7 +347,7 @@ const fetchStats = async () => {
   }
 }
 
-const fetchMediaList = async () => {
+const fetchMediaList = async (append = false) => {
   try {
     const params = { page: currentPage.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value
@@ -373,16 +356,25 @@ const fetchMediaList = async () => {
     if (selectedTagId.value) params.tagId = selectedTagId.value
     const response = await api.get('/media', { params })
     const data = response.data
-    if (Array.isArray(data)) {
-      mediaList.value = data
-      totalMedia.value = data.length
+    const list = Array.isArray(data) ? data : (data.list || [])
+    const total = Array.isArray(data) ? list.length : (data.total || 0)
+    if (append) {
+      mediaList.value = [...mediaList.value, ...list]
     } else {
-      mediaList.value = data.list || []
-      totalMedia.value = data.total || 0
+      mediaList.value = list
     }
+    totalMedia.value = total
   } catch (error) {
     ElMessage.error('获取媒体列表失败')
   }
+}
+
+const hasMore = computed(() => mediaList.value.length < totalMedia.value)
+
+const loadMore = () => {
+  if (loading.value || !hasMore.value) return
+  currentPage.value += 1
+  fetchMediaList(true)
 }
 
 const handleSearch = () => {
@@ -393,11 +385,6 @@ const handleSearch = () => {
 
 const handleTagChange = () => {
   currentPage.value = 1
-  fetchMediaList()
-}
-
-const handlePageChange = (p) => {
-  currentPage.value = p
   fetchMediaList()
 }
 
@@ -548,6 +535,22 @@ onMounted(() => {
   if (viewMode.value !== 'albums') {
     fetchMediaList()
   }
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      loadMore()
+    }
+  }, { rootMargin: '300px' })
+  watch(hasMore, (more) => {
+    if (more) {
+      nextTick(() => {
+        if (sentinel.value && observer) observer.observe(sentinel.value)
+      })
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  if (observer) observer.disconnect()
 })
 </script>
 
@@ -587,9 +590,9 @@ onMounted(() => {
 .container {
   position: relative;
   z-index: 1;
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem 2rem 3rem;
+  padding: 0.75rem 2.5rem 3rem;
   background: transparent;
 }
 
@@ -715,10 +718,45 @@ onMounted(() => {
   }
 }
 
-.pagination {
+.scroll-sentinel {
   display: flex;
   justify-content: center;
-  margin-top: 1.5rem;
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.floating-actions {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
+
+  .sel-count {
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-right: 0.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .floating-actions {
+    bottom: calc(4.4rem + env(safe-area-inset-bottom));
+    max-width: 94vw;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 .toolbar {

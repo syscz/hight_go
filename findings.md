@@ -180,6 +180,11 @@
 - 首页：紧凑页头（不再大 hero）、等宽方形图片网格（hover 缩放 + 操作浮现）、相册纯封面
 - 看图：MediaLightbox 全屏组件（键盘导航、下载、详情、Esc）
 
+## Immich 化布局重构（2026-08-14，v2.1）
+- 桌面：左侧边栏导航（Immich 标志性布局）+ 主区照片墙
+- 移动端：顶部 mini 头 + 底部 Tab
+- 无限滚动、浮动多选栏、无统计条/大标题
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/
