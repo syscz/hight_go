@@ -3,7 +3,7 @@
     <header class="hero-header">
       <div class="hero-content">
         <p class="hero-eyebrow">MY MEDIA GALLERY</p>
-        <h1 class="hero-title">SEE</h1>
+        <h1 class="hero-title">我的媒体库</h1>
         <p class="hero-subtitle">记录美好瞬间</p>
       </div>
       <el-button type="primary" round size="large" @click="showCreateAlbumDialog" class="hero-action">
@@ -566,9 +566,9 @@ onMounted(() => {
 
   .hero-title {
     margin: 0;
-    font-size: 4.5rem;
+    font-size: 3.4rem;
     font-weight: 800;
-    letter-spacing: 4px;
+    letter-spacing: 2px;
     line-height: 1.1;
     background: linear-gradient(135deg, #fff 0%, #b3e5fc 45%, #4fc3f7 100%);
     -webkit-background-clip: text;
@@ -1065,7 +1065,7 @@ onMounted(() => {
     padding: 3.5rem 1rem 2.5rem;
 
     .hero-title {
-      font-size: 3rem;
+      font-size: 2.2rem;
     }
 
     .hero-subtitle {
