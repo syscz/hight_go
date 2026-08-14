@@ -173,6 +173,12 @@
 - 修复：永久删除时清理缩略图文件（初版漏删，已修并重新部署）
 - 线上验证：缩略图生成、相册封面带出（默认相册/老数据兼容）、分页 total 22、前端 index-CQn81RXg.js
 
+### 补充：2026-08-14 前端缓存问题修复
+- 现象：用户反馈"前端没见明显变化"，实为浏览器缓存旧 index.html（nginx 无 Cache-Control，浏览器启发式缓存）
+- 修复：nginx 缓存策略——HTML `no-cache`（每次校验），assets `public, max-age=31536000, immutable`（hash 文件名长缓存）
+- 同步：仓库 nginx-media.conf 更新为与线上一致（含 gzip_static、缓存策略、/data/media/uploads alias）
+- 用户操作：浏览器硬刷新（Ctrl+F5 / Cmd+Shift+R）一次后可见新版本；此后部署不再有缓存问题
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

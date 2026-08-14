@@ -157,6 +157,10 @@
 - 修复：永久删除同时清理缩略图
 - 暂缓项：A1 HTTPS + A2 CDN（需要域名，用户确认暂不做）；后续若注册域名可随时继续
 
+## 缓存策略（2026-08-14）
+- nginx：HTML no-cache；/assets/ 长缓存 immutable（文件名带 hash，安全）
+- 教训：部署前应更新缓存策略，否则浏览器缓存旧页面导致"看不到新版本"
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/
