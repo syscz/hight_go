@@ -1,2 +1,5 @@
 # 后端编译产物
 backend/target/
+
+# IDE 配置
+.idea/
