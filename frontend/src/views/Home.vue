@@ -1123,18 +1123,20 @@ onMounted(() => {
 
 :deep(.el-dialog) {
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(18, 25, 35, 0.96);
   backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
 
   .el-dialog__header {
-    background: linear-gradient(135deg, rgba(129, 212, 250, 0.2) 0%, rgba(255, 255, 255, 0.5) 100%);
+    background: linear-gradient(135deg, rgba(79, 195, 247, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%);
     border-bottom: 1px solid rgba(129, 212, 250, 0.3);
     border-radius: 20px 20px 0 0;
     margin-right: 0;
     padding: 1.25rem 1.5rem;
 
     .el-dialog__title {
-      color: #0288d1;
+      color: var(--text-primary);
       font-weight: 700;
       font-size: 1.1rem;
     }
@@ -1162,7 +1164,7 @@ onMounted(() => {
 :deep(.el-input__wrapper) {
   border-radius: 12px;
   padding: 8px 12px;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.07);
   box-shadow: 0 0 0 1px rgba(129, 212, 250, 0.3);
 
   &:hover {
@@ -1176,7 +1178,8 @@ onMounted(() => {
 
 :deep(.el-textarea__inner) {
   border-radius: 12px;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
   box-shadow: 0 0 0 1px rgba(129, 212, 250, 0.3);
 
   &:hover {

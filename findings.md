@@ -167,6 +167,7 @@
 - Home 升级 hero：MY MEDIA GALLERY 眉题 + SEE 渐变大标题（4.5rem）+ 副标题
 - Element Plus 全组件深色适配（CSS 变量覆盖：输入框/弹窗/分页/radio 等）
 - 部署 index-C8Nhj0W0.js，HTML no-cache 生效，普通刷新即可看到新版
+- 踩坑记录：style.css 未在 main.js 引入导致深色变量全部失效（页面白色）；Vite 模板残留 #app 1126px 限制导致排版异常 → 均已修复（main.js 引入 + 模板残留清理）
 
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/

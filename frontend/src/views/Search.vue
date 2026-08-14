@@ -288,7 +288,7 @@ const goBack = () => {
     height: 60px;
     border-radius: 8px;
     overflow: hidden;
-    background: #f0f0f0;
+    background: rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;

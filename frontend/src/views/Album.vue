@@ -264,13 +264,16 @@ onMounted(() => {
   }
 
   :deep(.el-button) {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    background: rgba(79, 195, 247, 0.12);
+    border: 1px solid rgba(79, 195, 247, 0.5);
+    color: #e0f7ff;
+    font-weight: 600;
     backdrop-filter: blur(5px);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(79, 195, 247, 0.25);
+      border-color: #4fc3f7;
+      color: #fff;
     }
   }
 }
@@ -287,12 +290,13 @@ onMounted(() => {
   margin-bottom: 1.5rem;
 
   :deep(.el-radio-button__inner) {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    color: #333;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
 
     &:hover {
-      color: #29b6f6;
+      color: #4fc3f7;
+      border-color: rgba(79, 195, 247, 0.5);
     }
   }
 

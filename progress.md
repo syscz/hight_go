@@ -188,6 +188,13 @@
 - 部署：index-C8Nhj0W0.js；HTML no-cache 已生效（普通刷新即取新版）
 - 创建/修改的文件：style.css、App.vue、Home.vue、Album.vue、MediaDetail.vue、Upload.vue、Search.vue、Favorites.vue、Timeline.vue、Trash.vue、Auth.vue
 
+### 补充：2026-08-14 深色改版修复（用户反馈三个问题）
+- 根因 1（大部分白色）：style.css 从未被 main.js 引入（缺 import './style.css'），全部深色 CSS 变量失效 → 修复 main.js
+- 根因 2（排版奇怪）：style.css 残留 Vite 模板样式（#app width:1126px + text-align:center、暗色媒体查询覆盖主色为紫）→ 清理模板残留，重写为纯设计系统
+- 根因 3（相册返回键找不到）：Album 页返回按钮在深色下不明显 → 改为主色描边 + 浅色文字，hover 高亮
+- 其他：Home 弹窗/输入框/筛选按钮等残留浅色 → 深色玻璃化
+- 部署：index-hYYxtVzv.js（HTML no-cache，普通刷新即见）
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|
