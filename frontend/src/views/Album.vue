@@ -231,7 +231,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .album-view {
   min-height: 100vh;
-  background: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80') center/cover no-repeat;
+  background: transparent;
   position: relative;
 }
 
@@ -242,8 +242,9 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 2rem 2.5rem;
-  background: linear-gradient(135deg, rgba(40, 60, 80, 0.7) 0%, rgba(20, 40, 60, 0.5) 100%);
+  background: var(--glass);
   backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border);
 
   .header-content {
     h1 {
@@ -310,9 +311,9 @@ onMounted(() => {
 }
 
 .media-item {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass);
   backdrop-filter: blur(10px);
-  border: 2px solid transparent;
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
@@ -321,9 +322,9 @@ onMounted(() => {
 
   &:hover {
     border-color: #81d4fa;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--glass-strong);
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(79, 195, 247, 0.2);
+    box-shadow: var(--shadow-glow);
   }
 
   &.selected {
@@ -413,7 +414,7 @@ onMounted(() => {
 
   .media-title {
     font-size: 0.95rem;
-    color: #29b6f6;
+    color: var(--text-primary);
     font-weight: 600;
     margin-bottom: 0.5rem;
     overflow: hidden;
@@ -425,7 +426,7 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     font-size: 0.8rem;
-    color: #81d4fa;
+    color: var(--text-secondary);
   }
 }
 

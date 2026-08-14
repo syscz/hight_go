@@ -27,12 +27,43 @@
 
   /* Element Plus 主题色：雪山蓝白 */
   --el-color-primary: #4fc3f7;
-  --el-color-primary-light-3: #81d4fa;
-  --el-color-primary-light-5: #b3e5fc;
-  --el-color-primary-light-7: #e1f5fe;
-  --el-color-primary-light-8: #e8f6fc;
-  --el-color-primary-light-9: #f3fbff;
+  --el-color-primary-light-3: #7dd8fc;
+  --el-color-primary-light-5: #a7e7fd;
+  --el-color-primary-light-7: #d1f3ff;
+  --el-color-primary-light-8: #e0f7ff;
+  --el-color-primary-light-9: #effcff;
   --el-color-primary-dark-2: #29b6f6;
+
+  /* 深色沉浸式设计系统 */
+  --bg-base: #0a0e14;
+  --bg-elevated: #10151d;
+  --glass: rgba(255, 255, 255, 0.055);
+  --glass-strong: rgba(255, 255, 255, 0.09);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.62);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --accent: #4fc3f7;
+  --accent-2: #67e8f9;
+  --radius: 16px;
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 1px rgba(79, 195, 247, 0.35), 0 8px 30px rgba(79, 195, 247, 0.15);
+
+  /* Element Plus 深色适配 */
+  --el-bg-color: #10151d;
+  --el-bg-color-overlay: #141b25;
+  --el-border-color: rgba(255, 255, 255, 0.14);
+  --el-border-color-light: rgba(255, 255, 255, 0.1);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.08);
+  --el-text-color-primary: rgba(255, 255, 255, 0.92);
+  --el-text-color-regular: rgba(255, 255, 255, 0.75);
+  --el-text-color-secondary: rgba(255, 255, 255, 0.55);
+  --el-text-color-placeholder: rgba(255, 255, 255, 0.35);
+  --el-fill-color-blank: #10151d;
+  --el-fill-color-light: rgba(255, 255, 255, 0.08);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.05);
+  --el-mask-color: rgba(0, 0, 0, 0.65);
+  --el-disabled-bg-color: rgba(255, 255, 255, 0.05);
 
   @media (max-width: 1024px) {
     font-size: 16px;
@@ -63,6 +94,33 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background:
+    radial-gradient(1100px 520px at 85% -10%, rgba(79, 195, 247, 0.1), transparent 60%),
+    radial-gradient(900px 480px at 5% 110%, rgba(103, 232, 249, 0.06), transparent 60%),
+    #0a0e14;
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* 全局滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e14;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+::selection {
+  background: rgba(79, 195, 247, 0.35);
+  color: #fff;
 }
 
 h1,

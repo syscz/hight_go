@@ -179,6 +179,15 @@
 - 同步：仓库 nginx-media.conf 更新为与线上一致（含 gzip_static、缓存策略、/data/media/uploads alias）
 - 用户操作：浏览器硬刷新（Ctrl+F5 / Cmd+Shift+R）一次后可见新版本；此后部署不再有缓存问题
 
+### 补充：2026-08-14 前端大改版（深色沉浸式 · 影院级）
+- 设计方向：用户确认方案 1（深色沉浸式）
+- 全局：style.css 定义深色设计系统（--bg-base/--glass/--accent 等变量）+ Element Plus 深色适配（主色变体、输入框/弹窗/分页暗色）
+- App.vue：深色玻璃导航（渐变 SEE logo）、深色 footer、全局滚动条/选区
+- Home：hero 区（MY MEDIA GALLERY 眉题 + SEE 渐变大标题 + 副标题 + 主色新建按钮）、深色玻璃工具栏/统计/相册/瀑布流卡片（hover 主色光晕）、骨架屏/分页深色
+- 其他页面：Album/MediaDetail/Upload/Search/Favorites/Timeline/Trash/Auth 统一深色玻璃化；Auth 页极光光斑背景
+- 部署：index-C8Nhj0W0.js；HTML no-cache 已生效（普通刷新即取新版）
+- 创建/修改的文件：style.css、App.vue、Home.vue、Album.vue、MediaDetail.vue、Upload.vue、Search.vue、Favorites.vue、Timeline.vue、Trash.vue、Auth.vue
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

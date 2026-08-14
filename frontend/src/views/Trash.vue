@@ -113,7 +113,7 @@ onMounted(() => {
     margin-bottom: 1.5rem;
     h2 {
       margin: 0;
-      color: #333;
+      color: var(--text-primary);
     }
     .header-actions {
       display: flex;
@@ -125,7 +125,7 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .media-grid {
@@ -136,9 +136,18 @@ onMounted(() => {
 
 .media-item {
   position: relative;
-  border-radius: 8px;
+  border-radius: 14px;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba(79, 195, 247, 0.45);
+    box-shadow: var(--shadow-glow);
+  }
   img, video {
     width: 100%;
     height: 180px;

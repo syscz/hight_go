@@ -55,13 +55,6 @@ const handleLogout = () => {
 </script>
 
 <style lang="scss">
-body {
-  margin: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%),
-              url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center/cover no-repeat fixed;
-  min-height: 100vh;
-}
-
 .app {
   min-height: 100vh;
   display: flex;
@@ -72,10 +65,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(10, 14, 20, 0.72);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 
   .container {
@@ -93,6 +86,10 @@ body {
     font-weight: 700;
     color: white;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, #81d4fa 0%, #e0f7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   nav {
@@ -181,11 +178,11 @@ body {
 }
 
 .footer {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(10, 14, 20, 0.65);
   backdrop-filter: blur(10px);
   padding: 1.25rem 0;
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 
   .container {
     max-width: 1200px;

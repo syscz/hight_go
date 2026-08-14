@@ -236,14 +236,16 @@ onMounted(() => {
 .upload {
   max-width: 600px;
   margin: 0 auto;
-  background: white;
+  background: var(--glass);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
 
   h2 {
     margin-bottom: 2rem;
     text-align: center;
+    color: var(--text-primary);
   }
 
   .el-upload {
@@ -251,7 +253,7 @@ onMounted(() => {
   }
 
   .file-count {
-    color: #409eff;
+    color: #4fc3f7;
     font-weight: 600;
   }
 
@@ -271,7 +273,7 @@ onMounted(() => {
       .file-name {
         display: block;
         font-size: 0.85rem;
-        color: #606266;
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -281,7 +283,7 @@ onMounted(() => {
       .status-text {
         display: block;
         font-size: 0.75rem;
-        color: #909399;
+        color: var(--text-muted);
         margin-top: 0.25rem;
         text-align: right;
       }

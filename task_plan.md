@@ -117,6 +117,16 @@
 - [x] B10 网格/列表视图切换 + 中文字体栈
 - **状态：** complete（A1 HTTPS/A2 CDN 待域名确认；A7 状态管理暂缓；A9 完整图表页暂缓）
 
+## 阶段 12：前端大改版（深色沉浸式 · 影院级，用户确认方案 1）
+- [x] 全局设计系统：深色背景（墨蓝近黑 + 极光光斑）+ 玻璃拟态卡片 + 雪山蓝主色 + 全局 CSS 变量（style.css）
+- [x] App.vue：深色玻璃导航（渐变 logo）、footer、全局滚动条/选区样式
+- [x] Home：hero 区（SEE 大标题渐变 + 副标题 + 新建按钮）+ 深色玻璃相册/媒体卡片（hover 光晕）+ 统计/工具栏玻璃化
+- [x] Album/MediaDetail：深色玻璃容器、评论/信息区深色化、视频圆角黑底
+- [x] Upload/Search/Favorites/Timeline/Trash/Auth：统一深色玻璃化（登录页极光背景）
+- [x] Element Plus 深色适配（主色变体、输入框/弹窗/分页暗色变量）
+- [x] 构建验证 + 线上部署（index-C8Nhj0W0.js，HTML no-cache 自动取新版）
+- **状态：** complete
+
 ## 已做决策
 | 决策 | 理由 |
 |------|------|

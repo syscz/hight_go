@@ -1,11 +1,12 @@
 <template>
   <div class="home">
-    <header class="header">
-      <div class="header-content">
-        <h1>我的</h1>
-        <p>记录美好瞬间</p>
+    <header class="hero-header">
+      <div class="hero-content">
+        <p class="hero-eyebrow">MY MEDIA GALLERY</p>
+        <h1 class="hero-title">SEE</h1>
+        <p class="hero-subtitle">记录美好瞬间</p>
       </div>
-      <el-button type="primary" round @click="showCreateAlbumDialog">
+      <el-button type="primary" round size="large" @click="showCreateAlbumDialog" class="hero-action">
         <span class="btn-icon">➕</span> 新建
       </el-button>
     </header>
@@ -481,54 +482,62 @@ onMounted(() => {
 <style lang="scss" scoped>
 .home {
   min-height: 100vh;
-  background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center/cover no-repeat;
+  background: transparent;
   position: relative;
 }
 
-.header {
+.hero-header {
   position: relative;
   z-index: 1;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  padding: 2rem 2.5rem;
-  background: linear-gradient(135deg, rgba(40, 60, 80, 0.7) 0%, rgba(20, 40, 60, 0.5) 100%);
-  backdrop-filter: blur(10px);
+  text-align: center;
+  padding: 5rem 2rem 3.5rem;
+  background: radial-gradient(700px 320px at 50% 0%, rgba(79, 195, 247, 0.14), transparent 70%);
 
-  .header-content {
-    h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #fff 0%, #e3f2fd 50%, #bbdefb 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.25rem;
-    }
-
-    p {
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.7);
-      letter-spacing: 2px;
-    }
+  .hero-eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 6px;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
   }
 
-  :deep(.el-button--primary) {
-    background: linear-gradient(135deg, #81d4fa 0%, #4fc3f7 100%);
+  .hero-title {
+    margin: 0;
+    font-size: 4.5rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, #b3e5fc 45%, #4fc3f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 20px 60px rgba(79, 195, 247, 0.2);
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 3px;
+    margin-top: 0.75rem;
+  }
+
+  .hero-action {
+    margin-top: 2rem;
+    background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
     border: none;
-    font-weight: 500;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(79, 195, 247, 0.3);
+    color: #06222e;
+    font-weight: 600;
+    box-shadow: 0 8px 28px rgba(79, 195, 247, 0.35);
     transition: all 0.3s;
 
     &:hover {
-      opacity: 0.9;
       transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(79, 195, 247, 0.45);
     }
-  }
-
-  .btn-icon {
-    margin-right: 4px;
   }
 }
 
@@ -538,11 +547,11 @@ onMounted(() => {
   max-width: 900px;
   margin: 0 auto;
   padding: 1rem 2rem 3rem;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--glass);
   backdrop-filter: blur(15px);
   border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--glass-border);
 }
 
 .albums-grid {
@@ -554,9 +563,9 @@ onMounted(() => {
 .album-item {
   position: relative;
   padding: 1.75rem 1.25rem;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.5);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -595,7 +604,8 @@ onMounted(() => {
 
   &:hover {
     border-color: #81d4fa;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--glass-strong);
+    box-shadow: var(--shadow-glow);
   }
 
   .album-icon {
@@ -610,14 +620,14 @@ onMounted(() => {
 
   .album-name {
     font-size: 1rem;
-    color: #29b6f6;
+    color: var(--text-primary);
     font-weight: 600;
     margin-bottom: 0.5rem;
   }
 
   .album-count {
     font-size: 0.85rem;
-    color: #81d4fa;
+    color: var(--text-secondary);
   }
 
   .delete-btn {
@@ -651,16 +661,15 @@ onMounted(() => {
   }
 
   p {
-    color: #fff;
+    color: var(--text-secondary);
     font-size: 1.25rem;
     font-weight: 500;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
 
   .empty-hint {
     font-size: 0.95rem;
-    color: rgba(255,255,255,0.8);
+    color: var(--text-muted);
   }
 }
 
@@ -677,13 +686,13 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2.5rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   margin: 1rem 2.5rem;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--glass-border);
 
   .toolbar-left {
     .view-mode-group {
@@ -815,13 +824,13 @@ onMounted(() => {
   gap: 1.5rem;
   padding: 0.85rem 2rem;
   margin: 0 2.5rem 1rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--glass);
   backdrop-filter: blur(10px);
   border-radius: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
 
   span {
     display: flex;
@@ -890,18 +899,20 @@ onMounted(() => {
 
 .media-item {
   position: relative;
-  border-radius: 8px;
+  border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
-  background: rgba(255,255,255,0.9);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   transition: all 0.3s;
   break-inside: avoid;
   margin-bottom: 1rem;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-color: rgba(79, 195, 247, 0.45);
+    box-shadow: var(--shadow-glow);
   }
 
   &.selected {
@@ -973,11 +984,12 @@ onMounted(() => {
   gap: 1rem;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: rgba(40,60,80,0.1);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   margin-bottom: 1rem;
   span {
-    color: #333;
+    color: var(--text-primary);
     font-weight: 500;
   }
 }
@@ -990,25 +1002,20 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .header {
-    padding: 1rem;
-    flex-direction: column;
-    gap: 0.75rem;
+  .hero-header {
+    padding: 3.5rem 1rem 2.5rem;
 
-    .header-content {
-      text-align: center;
-
-      h1 {
-        font-size: 1.4rem;
-      }
-
-      p {
-        font-size: 0.8rem;
-      }
+    .hero-title {
+      font-size: 3rem;
     }
 
-    .el-button {
-      padding: 0.5rem 1rem;
+    .hero-subtitle {
+      font-size: 0.95rem;
+      letter-spacing: 2px;
+    }
+
+    .hero-action {
+      margin-top: 1.5rem;
     }
   }
 

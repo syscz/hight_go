@@ -429,10 +429,11 @@ onMounted(() => {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 2rem;
-    background: white;
+    background: var(--glass);
     border-radius: 12px;
     padding: 2rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-card);
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
@@ -443,7 +444,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f5f5;
+    background: rgba(0, 0, 0, 0.35);
     border-radius: 8px;
     overflow: hidden;
     min-height: 400px;
@@ -465,7 +466,7 @@ onMounted(() => {
   .media-info {
     h2 {
       margin: 0 0 1rem 0;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .info-meta {
@@ -480,7 +481,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: #666;
+        color: var(--text-secondary);
         font-size: 0.9rem;
       }
     }
@@ -490,12 +491,12 @@ onMounted(() => {
 
       h3 {
         font-size: 1rem;
-        color: #333;
+        color: var(--text-primary);
         margin: 0 0 0.5rem 0;
       }
 
       p {
-        color: #666;
+        color: var(--text-secondary);
         line-height: 1.6;
       }
     }
@@ -505,7 +506,7 @@ onMounted(() => {
 
       h3 {
         font-size: 1rem;
-        color: #333;
+        color: var(--text-primary);
         margin: 0 0 0.5rem 0;
       }
 
@@ -570,9 +571,9 @@ onMounted(() => {
       overflow-y: auto;
     }
 
-    .comment-item {
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #f0f0f0;
+      .comment-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
       .comment-header {
         display: flex;
@@ -582,24 +583,24 @@ onMounted(() => {
 
         .comment-user {
           font-weight: 600;
-          color: #333;
+          color: var(--text-primary);
         }
 
         .comment-time {
-          color: #999;
+          color: var(--text-muted);
           font-size: 0.85rem;
         }
       }
 
       .comment-content {
-        color: #666;
+        color: var(--text-secondary);
         line-height: 1.5;
       }
     }
 
     .no-comments {
       text-align: center;
-      color: #999;
+      color: var(--text-muted);
       padding: 1rem;
     }
   }

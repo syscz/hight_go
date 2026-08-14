@@ -160,29 +160,30 @@ const goBack = () => {
 <style lang="scss" scoped>
 .search-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e8f4f8 0%, #f5f7fa 100%);
+  background: transparent;
 }
 
 .header {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--glass);
   backdrop-filter: blur(10px);
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
 
   .header-content {
     h1 {
       margin: 0;
       font-size: 1.5rem;
-      color: #333;
+      color: var(--text-primary);
     }
 
     p {
       margin: 0.25rem 0 0;
       font-size: 0.9rem;
-      color: #666;
+      color: var(--text-secondary);
     }
   }
 }
@@ -233,29 +234,30 @@ const goBack = () => {
 .search-hint {
   p {
     font-size: 1rem;
-    color: #666;
+    color: var(--text-secondary);
     text-align: center;
   }
 }
 
 .file-results {
-  background: white;
+  background: var(--glass);
   border-radius: 16px;
   padding: 1rem;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
   min-height: 300px;
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .no-results, .search-tip {
   text-align: center;
   padding: 3rem;
-  color: #999;
+  color: var(--text-muted);
 
   p {
     font-size: 1rem;
@@ -278,7 +280,7 @@ const goBack = () => {
   transition: background 0.2s;
 
   &:hover {
-    background: #f5f7fa;
+    background: var(--glass-strong);
   }
 
   .result-thumb {
@@ -309,7 +311,7 @@ const goBack = () => {
 
     .result-title {
       font-size: 1rem;
-      color: #333;
+      color: var(--text-primary);
       font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -325,7 +327,7 @@ const goBack = () => {
 
     .result-meta {
       font-size: 0.85rem;
-      color: #999;
+      color: var(--text-muted);
       margin-top: 0.25rem;
     }
   }
