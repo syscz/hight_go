@@ -9,6 +9,7 @@
           <router-link to="/favorites" class="nav-link">收藏</router-link>
           <router-link to="/timeline" class="nav-link">时间线</router-link>
           <router-link to="/trash" class="nav-link">回收站</router-link>
+          <router-link to="/search" class="nav-link">搜索</router-link>
           <span v-if="currentUser" class="user-info">
             <span class="username">{{ currentUser.username }}</span>
             <button @click="handleLogout" class="logout-btn">退出</button>
