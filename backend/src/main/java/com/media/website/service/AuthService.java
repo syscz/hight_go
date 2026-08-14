@@ -8,6 +8,7 @@ import com.media.website.vo.AuthResponseVO;
 import com.media.website.vo.MeVO;
 import com.media.website.vo.UserVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +17,19 @@ public class AuthService {
 
     private final UserMapper userMapper;
     private final JwtService jwtService;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    private boolean isBcrypt(String password) {
+        return password != null && password.startsWith("$2");
+    }
+
+    private boolean verifyPassword(String rawPassword, String storedPassword) {
+        if (isBcrypt(storedPassword)) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+        // 兼容旧明文密码（登录成功后自动升级为 BCrypt）
+        return storedPassword != null && storedPassword.equals(rawPassword);
+    }
 
     public AuthResponseVO register(RegisterRequestDto request) {
         String username = request.getUsername();
@@ -27,7 +41,7 @@ public class AuthService {
             throw new IllegalArgumentException("用户名已存在");
         }
 
-        User user = new User(username, password, "USER");
+        User user = new User(username, passwordEncoder.encode(password), "USER");
         userMapper.insert(user);
 
         String token = jwtService.generateToken(username, user.getId(), user.getRole());
@@ -39,8 +53,13 @@ public class AuthService {
         String password = request.getPassword();
 
         User user = userMapper.findByUsername(username);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !verifyPassword(password, user.getPassword())) {
             throw new IllegalArgumentException("用户名或密码错误");
+        }
+
+        if (!isBcrypt(user.getPassword())) {
+            userMapper.updatePassword(user.getId(), passwordEncoder.encode(password));
+            user.setPassword(userMapper.findById(user.getId()).getPassword());
         }
 
         String token = jwtService.generateToken(username, user.getId(), user.getRole());

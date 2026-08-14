@@ -84,6 +84,40 @@
 - **线上表结构管理**：切 MyBatis 后不再有 ddl-auto 自动建表/加列，上线前需确认线上表结构与新 SQL 完全匹配（media.user_id、is_favorite、is_deleted、deleted_at、albums.user_id、comments 表等）
 - **Category/Tag 路径不一致排查**：/categories 与 /api/categories 前缀问题
 
+## 优化迭代建议（2026-08-14，用户征询）
+### P0 安全（强烈建议优先）
+- 密码加密：users 表 password 明文存储（'123456'），登录直接 equals 比较 → 改 BCrypt 哈希存储与校验（存量用户需重置或兼容迁移）
+- JWT secret 抽离：application.yml 硬编码 hight-go-media-website-secret-key-2024，拿到源码即可伪造 token → 改为环境变量注入强随机密钥
+- 评论删除越权：CommentController.deleteComment 无归属校验，任意登录用户可删任意评论 → 校验 userId 或管理员
+- 上传安全：仅按扩展名判断类型，无 MIME/内容校验，2GB 上限过大 → 增加文件类型白名单与服务端校验
+### P1 稳定性/运维
+- systemd 服务化：当前 nohup java 启动，服务器重启后后端不自启 → 配置 systemd unit（自动拉起、托管日志）
+- 定时备份：服务器无自动备份（本次为手动）→ crontab 每日备份数据库 + uploads
+- 上传目录与部署目录分离（老问题，部署误删风险，见上方）
+- 日志轮转：/tmp/backend.log 无轮转，上传/访问日志持续增长 → logback 配置滚动策略
+### P2 性能
+- N+1 查询：MediaMapper 嵌套 select（每条媒体单独查 category/album/tags）→ 改 JOIN 一次性查询
+- 前端懒加载 + nginx gzip：媒体列表图片未懒加载、nginx 未开 gzip
+- 列表分页：当前一次性返回全部媒体，数据量大时卡顿
+### P3 功能完善
+- view_count 未实现：详情页显示"0 次查看"但后端从不更新 → 详情接口自增
+- 标签系统不完整：Media 有 tags 但前端无打标签/按标签浏览
+- 相册删除体验：删除有媒体引用的相册直接 403 无提示 → 友好报错或级联提示
+- 统一异常处理：错误响应散落各 Controller → @RestControllerAdvice + @Valid 参数校验（pom 已有 validation 依赖未使用）
+### P4 前端体验
+- Home 媒体列表未走 Pinia store（与 Album 风格不一）→ 统一状态管理
+- 搜索无防抖/高亮；移动端细节可继续打磨
+
+## P0 + P1 已落地（2026-08-14）
+- 密码 BCrypt 化：存量明文密码登录自动升级；线上 admin 已为 $2a$ 哈希；密码不再明文存储
+- JWT secret 环境变量注入：线上密钥为随机 base64（systemd Environment 注入）；旧 token 已失效需重新登录
+- 评论删除归属校验：非本人删除 403
+- 上传类型白名单：拒绝 other 类型（400），校验先于写盘（无孤儿文件）
+- systemd 服务化：media-website.service（Restart=always、开机自启、journald 日志轮转），废弃 nohup
+- 上传目录分离：/data/media/uploads（nginx alias 同步），部署不再有误删 uploads 风险（老问题根治）
+- 定时备份：crontab 每日 03:00 备份数据库 + uploads，保留 14 天
+- 服务器备份清单（20260814）：/var/www/backup/ 含 jar×2、前端 tar、数据库 sql×2、uploads tar×2、nginx media.conf、assets
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

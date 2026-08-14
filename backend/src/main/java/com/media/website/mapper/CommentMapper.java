@@ -11,6 +11,8 @@ public interface CommentMapper {
 
     List<Comment> findByMediaIdOrderByCreatedAtDesc(@Param("mediaId") Long mediaId);
 
+    Comment findById(@Param("id") Long id);
+
     int insert(Comment comment);
 
     int deleteById(@Param("id") Long id);

@@ -55,6 +55,20 @@
 1. 是否提交 git？（用户已确认先不提交，交付后再次确认）
 2. 是否需要部署上线？（待用户决定）
 
+## 阶段 6：P0 安全加固（用户确认优先）
+- [x] 密码 BCrypt 化：引入 spring-security-crypto，register/login 用 BCrypt；存量明文密码登录成功后自动升级（线上 admin 已升级为 $2a$）
+- [x] JWT secret 环境变量注入：application.yml 改为 ${JWT_SECRET:默认值}，线上 systemd 注入强随机密钥（切换后旧 token 失效，需重新登录）
+- [x] 评论删除越权修复：deleteComment 校验评论归属（非本人 403）
+- [x] 上传类型白名单：扩展名不在 image/video 白名单时拒绝（400）；校验在写盘前，不产生孤儿文件
+- **状态：** complete
+
+## 阶段 7：P1 稳定性（用户确认优先）
+- [x] systemd 服务化：media-website.service（Restart=always、Environment=JWT_SECRET），替换 nohup 启动，开机自启
+- [x] 上传目录与部署目录分离：迁移到 /data/media/uploads（403MB 存量文件 + nginx alias 同步），部署不再触碰上传文件
+- [x] 定时备份：crontab 每日 03:00 备份数据库 + uploads（保留 14 天），脚本已试运行验证
+- [x] 日志轮转：systemd journal 托管（journald 自动限额轮转），废弃 /tmp/backend.log
+- **状态：** complete
+
 ## 已做决策
 | 决策 | 理由 |
 |------|------|

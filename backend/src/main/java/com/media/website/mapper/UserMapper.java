@@ -14,4 +14,6 @@ public interface UserMapper {
     int countByUsername(@Param("username") String username);
 
     int insert(User user);
+
+    int updatePassword(@Param("id") Long id, @Param("password") String password);
 }

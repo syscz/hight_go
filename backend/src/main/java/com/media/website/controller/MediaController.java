@@ -84,7 +84,7 @@ public class MediaController {
     }
 
     @PostMapping
-    public ResponseEntity<MediaVO> uploadMedia(
+    public ResponseEntity<?> uploadMedia(
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String description,
@@ -99,6 +99,8 @@ public class MediaController {
         try {
             Media saved = mediaService.uploadMedia(userId, file, title, description, categoryId, albumId);
             return ResponseEntity.status(HttpStatus.CREATED).body(MediaVO.from(saved));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

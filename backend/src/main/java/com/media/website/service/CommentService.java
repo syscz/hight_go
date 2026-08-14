@@ -26,7 +26,14 @@ public class CommentService {
         return comment;
     }
 
-    public void deleteComment(Long id) {
+    public void deleteComment(Long id, Long userId) {
+        Comment comment = commentMapper.findById(id);
+        if (comment == null) {
+            throw new IllegalArgumentException("评论不存在");
+        }
+        if (!comment.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("无权删除该评论");
+        }
         commentMapper.deleteById(id);
     }
 }

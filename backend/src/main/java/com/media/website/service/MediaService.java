@@ -82,6 +82,11 @@ public class MediaService {
     public Media uploadMedia(Long userId, MultipartFile file, String title, String description,
                              Long categoryId, Long albumId) {
         try {
+            String fileType = fileUploadService.getFileType(file.getOriginalFilename());
+            if ("other".equals(fileType)) {
+                throw new IllegalArgumentException("不支持的文件类型，仅支持图片（jpg/jpeg/png/gif/webp/bmp）和视频（mp4/avi/mov/wmv/flv/mkv）");
+            }
+
             String fileUrl = fileUploadService.uploadFile(file);
 
             Media media = new Media();
@@ -96,7 +101,6 @@ public class MediaService {
             media.setIsFavorite(false);
             media.setIsDeleted(false);
 
-            String fileType = fileUploadService.getFileType(file.getOriginalFilename());
             if ("image".equals(fileType)) {
                 media.setMediaType(Media.MediaType.image);
                 media.setCoverImage(fileUrl);

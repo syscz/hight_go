@@ -10,6 +10,12 @@
         ORDER BY created_at DESC, id DESC
     </select>
 
+    <select id="findById" resultType="Comment">
+        SELECT id, content, media_id, user_id, username, created_at
+        FROM comments
+        WHERE id = #{id}
+    </select>
+
     <insert id="insert" parameterType="Comment" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO comments (content, media_id, user_id, username, created_at)
         VALUES (#{content}, #{mediaId}, #{userId}, #{username}, NOW())

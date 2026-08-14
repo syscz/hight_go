@@ -46,7 +46,11 @@ public class CommentController {
         if (userId == null) {
             return ResponseEntity.status(401).body(new ApiErrorVO("请先登录"));
         }
-        commentService.deleteComment(id);
-        return ResponseEntity.noContent().build();
+        try {
+            commentService.deleteComment(id, userId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).body(new ApiErrorVO(e.getMessage()));
+        }
     }
 }

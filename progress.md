@@ -118,6 +118,23 @@
 - 创建/修改的文件：
   - backend/src/main/resources/mapper/MediaMapper.xml
 
+### 补充：2026-08-14 P0 安全 + P1 稳定性改造上线
+- P0 安全：
+  - 密码 BCrypt：pom 引入 spring-security-crypto；AuthService register/login 改造，旧明文密码登录自动升级；本地+线上验证（admin 密码已 $2a$）
+  - JWT secret 环境变量：application.yml 改 ${JWT_SECRET:默认}，线上 systemd Environment 注入强随机密钥
+  - 评论越权：CommentService.deleteComment(id, userId) 校验归属，非本人 403
+  - 上传白名单：扩展名白名单校验，校验移到写盘前（修复孤儿文件问题）
+- P1 稳定性：
+  - systemd：/etc/systemd/system/media-website.service（Restart=always、JWT_SECRET），enable --now，替换 nohup；日志 journald 轮转
+  - 上传目录分离：uploads（403MB/7 日期目录）迁移至 /data/media/uploads，nginx alias 同步（media.conf 备份），旧文件 URL 验证 200
+  - 定时备份：/usr/local/bin/backup-media.sh（mysqldump + tar uploads，保留 14 天），crontab 0 3 * * *，试运行成功
+- 验证（线上）：登录/分类/标签/媒体 22 条/统计正常；txt 上传 400 且不落盘；上传 png 写入 /data/media/uploads 并访问 200；测试数据已清理
+- 备份：/var/www/backup/ 现有 20260814 全量（jar v1.4/v1.4.1、前端、数据库、uploads、media.conf）+ 每日 crontab
+- 注意：JWT 密钥切换后线上旧 token 失效，用户需重新登录
+- 创建/修改的文件：
+  - 后端：pom.xml、application.yml、AuthService、UserMapper(+xml)、CommentMapper(+xml)、CommentService、CommentController、MediaService、MediaController
+  - 服务器：media-website.service、/usr/local/bin/backup-media.sh、crontab、nginx media.conf、/data/media/uploads
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

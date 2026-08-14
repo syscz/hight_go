@@ -26,10 +26,10 @@ server:
 # 文件存储配置
 file:
   upload:
-    path: /var/www/media/uploads
+    path: /data/media/uploads
     url-prefix: /uploads
 
 # JWT配置
 jwt:
-  secret: hight-go-media-website-secret-key-2024
+  secret: ${JWT_SECRET:hight-go-media-website-secret-key-2024}
   expiration: 86400000
