@@ -88,6 +88,36 @@
   - 后端：CategoryController、TagController、AuthController、MediaController、AlbumController、CommentController、AuthService、dto 包 7 个文件重命名
   - 前端：MediaDetail.vue、Home.vue、Album.vue
 
+### 补充：2026-08-14 提交 v1.4 并上线替换
+- 执行的操作：
+  - git 提交 v1.4（09c6484）：64 文件变更（+1843/-1017）
+  - 上线准备：mvn package 生成 jar（29.5MB）、npm run build 生成前端 dist
+  - SSH 探查部署结构：后端 jar 在 /var/www/media/media-website.jar，nohup java 启动（非 systemd），前端在 /var/www/media，nginx 配置与仓库一致
+  - 数据库表结构核对：media/albums 列齐全（user_id/is_favorite/is_deleted/deleted_at 等），7 张表，22 媒体/4 相册/1 用户，无需变更
+  - 备份到 /var/www/backup/：media-website.jar.bak-20260814、frontend-20260814.tar.gz、media_website-20260814.sql、assets-20260814
+  - 替换：停旧进程 → jar 替换（29M）→ 前端 assets 重置并上传新构建 → 重启后端（PID 1828879）
+  - 全程未触碰 /var/www/media/uploads（上传文件完好，22 个媒体可访问）
+- 验证（线上公网）：
+  - 登录 200、媒体列表 22 条、统计/时间线/相册/搜索接口正常
+  - 分类 5 个、标签 8 个（路径修复生效）
+  - 前端 index-MEaOuIwm.js 新版本生效，/auth、/search、assets 均 200
+  - 上传文件公网访问 200（2894298 字节完整返回）
+- 回滚方案：jar 用 backup 下 .bak 覆盖重启；前端用 frontend-20260814.tar.gz 或 assets-20260814 还原；数据库用 media_website-20260814.sql
+- 备注：本机 PowerShell 调 curl 传 JSON 会丢双引号（测试工具问题，非线上问题）；线上登录/媒体等测试需在服务器端或正确转义执行
+
+### 补充：2026-08-14 搜索功能优化并二次上线
+- 执行的操作：
+  - 排查"搜索不相干结果"：确认 SQL 只匹配 title/description（不匹配文件名）、无相关度排序
+  - 修改 MediaMapper.xml searchByKeyword：扩展匹配 title/original_filename/filename/description + CASE 相关度排序（精确 > 前缀 > 包含）
+  - 本地打包验证：文件名搜索生效（搜 ChMk 命中）、无匹配返回空
+  - 二次上线：备份 v1.4 jar → 上传新 jar → 重启（PID 1830326）→ 线上验证
+- 验证（线上）：
+  - 搜 IMG_8163 → 1 条精确命中（修复前 0）
+  - 搜"7" → 11 条按相关度排序；搜 IMG → 20 条；搜"瑜" → 4 条瑜伽裤
+  - 数据库编码正常（title 为 UTF-8），中文搜索无问题
+- 创建/修改的文件：
+  - backend/src/main/resources/mapper/MediaMapper.xml
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

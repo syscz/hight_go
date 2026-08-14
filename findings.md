@@ -59,6 +59,23 @@
 - dto 包 7 个请求对象统一加 Dto 后缀：RegisterRequestDto、LoginRequestDto、CommentAddRequestDto、AlbumCreateRequestDto、AlbumUpdateRequestDto、BatchMoveRequestDto、BatchDeleteRequestDto
 - 说明：repository 目录是 JPA 时代的数据访问接口层（Spring Data JPA Repository），本次改造换 MyBatis 后由 mapper 包替代，文件已删、空目录也已清理（git 不跟踪空目录）
 
+## 线上部署信息（2026-08-14 确认）
+- 服务器：阿里云 47.97.191.168（Alibaba Cloud Linux 3，x86_64），nginx 1.20.1
+- 后端：/var/www/media/media-website.jar，nohup java -Xmx512m -Xms256m -jar ... --server.port=8081 启动，日志 /tmp/backend.log（非 systemd）
+- 前端：/var/www/media（index.html + assets/），nginx root 即该目录
+- 上传文件：/var/www/media/uploads（4 月至 5 月数据，部署全程未触碰）
+- 数据库：MySQL，media_website 库，root/123456（与本地一致）；表结构含 MyBatis 所需全部列，无需迁移
+- 备份位置：/var/www/backup/（20260814 全量备份：jar、前端、数据库、assets）
+- 注意：本地 PowerShell 调用 curl 传 JSON 时双引号会被吞（Content-Length 32 而非 40），线上测试请用服务器端 curl 或正确转义
+
+## 搜索功能优化（2026-08-14）
+- 问题：搜索"不相干结果"的根因有二——① SQL 只匹配 title/description，不匹配文件名（前端提示"搜索文件名、标题"但搜不到文件名）；② 纯 LIKE '%kw%' 无相关度排序，单字符/数字（如"7"、"i"）会全库命中且顺序杂乱
+- 修复（MediaMapper.xml searchByKeyword）：
+  - 匹配字段扩展：title、original_filename、filename、description
+  - 相关度排序 CASE：标题精确 > 文件名精确 > 标题前缀 > 文件名前缀 > 文件名前缀 > 标题包含 > 文件名包含 > 描述包含
+- 线上验证：搜 IMG_8163 命中 1 条（之前 0）；搜"7" 11 条按相关度排序；搜"瑜" 4 条瑜伽裤；中文 LIKE 正常
+- 备注：数据库 title 为正确 UTF-8（E7919C...），此前"中文搜索 0 命中"均为本地测试管道编码问题
+
 ## 后续改进事项（重要）
 - **上传目录与部署目录分离**：将 file.upload.path 改为部署目录之外（如 /data/media/uploads），nginx alias 同步修改，使重新部署不再影响上传文件
 - **部署流程规范**：部署脚本明确只替换 jar 与前端 dist，禁止整体清空 /var/www/media

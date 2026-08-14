@@ -77,12 +77,26 @@
     </select>
 
     <select id="searchByKeyword" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
+        SELECT <include refid="mediaColumns"/>,
+        CASE
+            WHEN title = #{keyword} THEN 0
+            WHEN original_filename = #{keyword} THEN 1
+            WHEN title LIKE CONCAT(#{keyword}, '%') THEN 2
+            WHEN original_filename LIKE CONCAT(#{keyword}, '%') THEN 3
+            WHEN filename LIKE CONCAT(#{keyword}, '%') THEN 4
+            WHEN title LIKE CONCAT('%', #{keyword}, '%') THEN 5
+            WHEN original_filename LIKE CONCAT('%', #{keyword}, '%') THEN 6
+            WHEN filename LIKE CONCAT('%', #{keyword}, '%') THEN 7
+            WHEN description LIKE CONCAT('%', #{keyword}, '%') THEN 8
+            ELSE 9
+        END AS relevance
         FROM media
         WHERE user_id = #{userId} AND is_deleted = FALSE
           AND (title LIKE CONCAT('%', #{keyword}, '%')
+               OR original_filename LIKE CONCAT('%', #{keyword}, '%')
+               OR filename LIKE CONCAT('%', #{keyword}, '%')
                OR description LIKE CONCAT('%', #{keyword}, '%'))
-        ORDER BY id
+        ORDER BY relevance, id
     </select>
 
     <select id="getTotalFileSizeByUserId" resultType="java.lang.Long">
