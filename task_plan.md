@@ -94,8 +94,8 @@
 
 ## 阶段 11：A+B 升级（用户确认全做）
 ### A 技术增强
-- [ ] A1 HTTPS：需要域名（待用户确认，无域名时说明 IP 证书方案）
-- [ ] A2 CDN：需要域名（Cloudflare 免费，自动压缩+缓存；待用户确认）
+- [ ] A1 HTTPS：暂缓（需要域名，用户确认暂不做）
+- [ ] A2 CDN：暂缓（需要域名，用户确认暂不做）
 - [x] A3 图片缩略图：上传生成缩略图，coverImage 指向缩略图（webp 等降级用原图）
 - [x] A4 上传进度条：axios onUploadProgress + el-progress
 - [x] A5 回收站定时清理：@Scheduled 每天清理 30 天前回收站（文件+记录）
