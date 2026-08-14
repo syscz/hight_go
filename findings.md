@@ -175,6 +175,11 @@
 - 服务器资源：2 核 1.8G 内存，转码用 veryfast 单线程队列，避免拖垮服务
 - 转码策略：所有视频上传后异步转 H.264 mp4（_conv.mp4），MediaVO.videoMp4Path 提供转码后路径；前端播放优先用转码路径
 
+## Immich 方向改版 + Unsplash 看图（2026-08-14）
+- 设计参考：Immich（自托管媒体库，纯图网格/hover 操作/紧凑工具栏）+ Unsplash（全屏看图/左右切换/下载）
+- 首页：紧凑页头（不再大 hero）、等宽方形图片网格（hover 缩放 + 操作浮现）、相册纯封面
+- 看图：MediaLightbox 全屏组件（键盘导航、下载、详情、Esc）
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

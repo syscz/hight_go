@@ -211,6 +211,14 @@
 - 部署：index-BINTZtOQ.js
 - 创建/修改：Media/MediaVO、MediaMapper(+xml)、AlbumMapper(+xml)、MediaService、AlbumService、VideoTranscodeService、MediaController、BatchUpdateRequestDto、Calendar.vue、Album.vue、Home.vue、App.vue、router、style.css
 
+### 补充：2026-08-14 Immich 方向改版 + Unsplash 看图
+- 用户参考 Immich/Unsplash 后确认改造方向
+- Home：hero 大标题区改为紧凑页头（左标题 + 右新建）；媒体网格从玻璃卡片瀑布流改为 Immich 式等宽方形纯图网格（无边框/阴影、hover 图片缩放 + 收藏/选择按钮浮现、选中蓝色描边）；相册卡片纯封面图
+- Album：媒体网格统一纯图化
+- 背景 #0a0a0c 近纯黑，工具栏/统计紧凑化
+- 新增 MediaLightbox 组件（Unsplash 式全屏看图）：点击网格图片直接看大图、左右箭头/键盘切换、下载原图、详情跳转、Esc 关闭；集成 Home 与 Album
+- 部署 index-CyzbfERd.js
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

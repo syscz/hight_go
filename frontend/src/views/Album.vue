@@ -56,11 +56,11 @@
 
       <div v-loading="loading" class="media-grid">
         <div
-          v-for="media in filteredMediaList"
+          v-for="(media, index) in filteredMediaList"
           :key="media.id"
           class="media-item"
           :class="{ selected: selectedIds.includes(media.id) }"
-          @click="handleItemClick(media.id)"
+          @click="handleItemClick(media.id, index)"
           @click.right.prevent="toggleSelection(media.id)"
         >
           <div class="media-checkbox" @click.stop="toggleSelection(media.id)">
@@ -128,6 +128,12 @@
         </template>
       </el-dialog>
 
+      <MediaLightbox
+        v-model:visible="lightboxVisible"
+        v-model:index="lightboxIndex"
+        :items="filteredMediaList"
+      />
+
       <div v-if="!loading && filteredMediaList.length === 0" class="empty-state">
         <div class="empty-icon">📭</div>
         <p>还没有作品</p>
@@ -143,6 +149,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api/index'
+import MediaLightbox from '../components/MediaLightbox.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -160,6 +167,8 @@ const slideshowVisible = ref(false)
 const ssIndex = ref(0)
 const playing = ref(false)
 let ssTimer = null
+const lightboxVisible = ref(false)
+const lightboxIndex = ref(0)
 
 const mediaList = computed(() => mediaStore.mediaList)
 const loading = computed(() => mediaStore.loading)
@@ -190,11 +199,12 @@ const handleTypeChange = () => {
   fetchAlbumData()
 }
 
-const handleItemClick = (id) => {
+const handleItemClick = (id, index) => {
   if (selectedIds.value.length > 0) {
     toggleSelection(id)
   } else {
-    viewMedia(id)
+    lightboxIndex.value = index
+    lightboxVisible.value = true
   }
 }
 
@@ -443,30 +453,24 @@ onUnmounted(() => {
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.5rem;
+  gap: 0.45rem;
 }
 
 .media-item {
+  aspect-ratio: 1;
   background: var(--glass);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   position: relative;
 
   &:hover {
-    border-color: #81d4fa;
-    background: var(--glass-strong);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-glow);
+    transform: scale(1.02);
   }
 
   &.selected {
-    border-color: #29b6f6;
-    background: rgba(41, 182, 246, 0.1);
-    box-shadow: 0 4px 15px rgba(41, 182, 246, 0.3);
+    outline: 2px solid #4fc3f7;
   }
 }
 
@@ -486,7 +490,7 @@ onUnmounted(() => {
 
 .media-thumbnail {
   position: relative;
-  aspect-ratio: 1;
+  height: 100%;
   overflow: hidden;
   z-index: 1;
 

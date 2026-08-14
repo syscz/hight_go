@@ -1,10 +1,9 @@
 <template>
   <div class="home">
-    <header class="hero-header">
-      <div class="hero-content">
-        <p class="hero-eyebrow">MY MEDIA GALLERY</p>
-        <h1 class="hero-title">我的媒体库</h1>
-        <p class="hero-subtitle">记录美好瞬间</p>
+    <header class="page-head">
+      <div class="page-head-left">
+        <h1>我的媒体库</h1>
+        <p>记录美好瞬间</p>
       </div>
       <el-button type="primary" round size="large" @click="showCreateAlbumDialog" class="hero-action">
         <span class="btn-icon">➕</span> 新建
@@ -127,11 +126,11 @@
         </div>
         <div v-else v-loading="loading" class="media-grid" :class="{ 'list-mode': viewLayout === 'list' }">
           <div
-            v-for="item in mediaList"
+            v-for="(item, index) in mediaList"
             :key="item.id"
             class="media-item"
             :class="{ selected: selectedMedia.includes(item.id) }"
-            @click="goToDetail(item.id)"
+            @click="openLightbox(index)"
             @click.meta="toggleSelect(item.id, $event)"
           >
             <input
@@ -231,6 +230,12 @@
         <el-button type="primary" @click="handleBatchEdit">保存</el-button>
       </template>
     </el-dialog>
+
+    <MediaLightbox
+      v-model:visible="lightboxVisible"
+      v-model:index="lightboxIndex"
+      :items="mediaList"
+    />
   </div>
 </template>
 
@@ -241,6 +246,7 @@ import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
 import api from '@/api/index'
+import MediaLightbox from '../components/MediaLightbox.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -264,6 +270,8 @@ const moveDialogVisible = ref(false)
 const targetAlbumId = ref(null)
 const editDialogVisible = ref(false)
 const editForm = ref({ title: '', description: '', tagIds: [] })
+const lightboxVisible = ref(false)
+const lightboxIndex = ref(0)
 const tags = computed(() => mediaStore.tags)
 let searchDebounce = null
 
@@ -410,6 +418,11 @@ const goToDetail = (id) => {
   })
 }
 
+const openLightbox = (index) => {
+  lightboxIndex.value = index
+  lightboxVisible.value = true
+}
+
 watch(viewMode, (mode) => {
   currentPage.value = 1
   if (mode !== 'albums') {
@@ -545,57 +558,28 @@ onMounted(() => {
   position: relative;
 }
 
-.hero-header {
+.page-head {
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  text-align: center;
-  padding: 5rem 2rem 3.5rem;
-  background: radial-gradient(700px 320px at 50% 0%, rgba(79, 195, 247, 0.14), transparent 70%);
+  padding: 0.5rem 0.5rem 1rem;
+  margin: 0 2.5rem;
+  border-bottom: 1px solid var(--glass-border);
 
-  .hero-eyebrow {
-    font-size: 0.8rem;
-    letter-spacing: 6px;
-    color: rgba(255, 255, 255, 0.45);
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-  }
+  .page-head-left {
+    h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
 
-  .hero-title {
-    margin: 0;
-    font-size: 3.4rem;
-    font-weight: 800;
-    letter-spacing: 2px;
-    line-height: 1.1;
-    background: linear-gradient(135deg, #fff 0%, #b3e5fc 45%, #4fc3f7 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 20px 60px rgba(79, 195, 247, 0.2);
-  }
-
-  .hero-subtitle {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
-    letter-spacing: 3px;
-    margin-top: 0.75rem;
-  }
-
-  .hero-action {
-    margin-top: 2rem;
-    background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
-    border: none;
-    color: #06222e;
-    font-weight: 600;
-    box-shadow: 0 8px 28px rgba(79, 195, 247, 0.35);
-    transition: all 0.3s;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 36px rgba(79, 195, 247, 0.45);
+    p {
+      margin: 0.15rem 0 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
     }
   }
 }
@@ -606,11 +590,7 @@ onMounted(() => {
   max-width: 900px;
   margin: 0 auto;
   padding: 1rem 2rem 3rem;
-  background: var(--glass);
-  backdrop-filter: blur(15px);
-  border-radius: 16px;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--glass-border);
+  background: transparent;
 }
 
 .albums-grid {
@@ -621,23 +601,26 @@ onMounted(() => {
 
 .album-item {
   position: relative;
-  padding: 1.75rem 1.25rem;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  overflow: hidden;
+  transition: transform 0.25s ease;
 
-  &.has-cover {
-    padding: 0;
-    overflow: hidden;
+  &:hover {
+    transform: translateY(-3px);
+    background: none;
+    box-shadow: none;
   }
 
   .album-cover {
     width: 100%;
     aspect-ratio: 4 / 3;
+    border-radius: 10px;
     overflow: hidden;
+    background: var(--glass);
 
     img {
       width: 100%;
@@ -653,18 +636,13 @@ onMounted(() => {
 
   &.has-cover .album-name,
   &.has-cover .album-count {
-    padding: 0.4rem 0.75rem;
+    padding: 0.5rem 0.25rem 0;
   }
 
   &.has-cover .delete-btn {
-    top: 0.5rem;
-    right: 0.5rem;
-  }
-
-  &:hover {
-    border-color: #81d4fa;
-    background: var(--glass-strong);
-    box-shadow: var(--shadow-glow);
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 5;
   }
 
   .album-icon {
@@ -681,12 +659,17 @@ onMounted(() => {
     font-size: 1rem;
     color: var(--text-primary);
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin: 0;
+    padding: 0.5rem 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .album-count {
     font-size: 0.85rem;
     color: var(--text-secondary);
+    padding: 0 0.25rem;
   }
 
   .delete-btn {
@@ -744,12 +727,12 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2.5rem;
+  padding: 0.6rem 1rem;
   background: var(--glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  margin: 1rem 2.5rem;
-  border-radius: 16px;
+  margin: 0.5rem 2.5rem 0;
+  border-radius: 12px;
   box-shadow: var(--shadow-card);
   border: 1px solid var(--glass-border);
 
@@ -881,11 +864,11 @@ onMounted(() => {
   z-index: 1;
   display: flex;
   gap: 1.5rem;
-  padding: 0.85rem 2rem;
-  margin: 0 2.5rem 1rem;
+  padding: 0.6rem 1.5rem;
+  margin: 0.5rem 2.5rem 0.75rem;
   background: var(--glass);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--text-secondary);
   font-size: 0.9rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -899,27 +882,21 @@ onMounted(() => {
 }
 
 .media-grid {
-  columns: 3;
-  column-gap: 1rem;
-  margin-top: 1rem;
-
-  @media (max-width: 1024px) {
-    columns: 2;
-  }
-
-  @media (max-width: 600px) {
-    columns: 2;
-    column-gap: 0.65rem;
-  }
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.5rem;
 
   &.list-mode {
-    columns: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
 
     .media-item {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      margin-bottom: 0.75rem;
+      aspect-ratio: auto;
 
       img,
       video {
@@ -927,6 +904,7 @@ onMounted(() => {
         height: 90px;
         flex-shrink: 0;
         border-radius: 8px;
+        object-fit: cover;
       }
 
       .media-checkbox {
@@ -958,39 +936,30 @@ onMounted(() => {
 
 .media-item {
   position: relative;
-  border-radius: 14px;
+  aspect-ratio: 1;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
   background: var(--glass);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  transition: all 0.3s;
-  break-inside: avoid;
-  margin-bottom: 1rem;
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: rgba(79, 195, 247, 0.45);
-    box-shadow: var(--shadow-glow);
-  }
+  transition: all 0.2s;
 
   &.selected {
-    outline: 3px solid #81d4fa;
+    outline: 2px solid #4fc3f7;
   }
 
   img, video {
     width: 100%;
+    height: 100%;
     object-fit: cover;
+    display: block;
   }
 
   img {
-    display: block;
-    height: auto;
+    transition: transform 0.35s ease;
   }
 
-  video {
-    display: block;
-    height: 150px;
+  &:hover img {
+    transform: scale(1.05);
   }
 
   .media-checkbox {
@@ -1001,6 +970,8 @@ onMounted(() => {
     height: 20px;
     cursor: pointer;
     z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s;
   }
 
   .media-overlay {
@@ -1032,9 +1003,19 @@ onMounted(() => {
     border-radius: 50%;
     cursor: pointer;
     font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+
     &.active {
       color: #ff6b6b;
     }
+  }
+
+  &:hover .media-checkbox,
+  &.selected .media-checkbox,
+  &:hover .favorite-btn,
+  &.selected .favorite-btn {
+    opacity: 1;
   }
 }
 
@@ -1168,8 +1149,8 @@ onMounted(() => {
   }
 
   .media-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 0.3rem;
   }
 
   .batch-actions {
