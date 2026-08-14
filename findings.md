@@ -169,6 +169,12 @@
 - 部署 index-C8Nhj0W0.js，HTML no-cache 生效，普通刷新即可看到新版
 - 踩坑记录：style.css 未在 main.js 引入导致深色变量全部失效（页面白色）；Vite 模板残留 #app 1126px 限制导致排版异常 → 均已修复（main.js 引入 + 模板残留清理）
 
+## 新功能 2+3+4+6+8+10+12（2026-08-14）
+- 批量打包下载（zip 流式）、批量编辑（标题/描述/标签）、日历视图、幻灯片播放、主题切换、视频转码、多用户隔离
+- 环境踩坑：阿里云服务器海外源不通（johnvansickle/GitHub 下载失败），ffmpeg 最终经 npmmirror 二进制镜像安装成功
+- 服务器资源：2 核 1.8G 内存，转码用 veryfast 单线程队列，避免拖垮服务
+- 转码策略：所有视频上传后异步转 H.264 mp4（_conv.mp4），MediaVO.videoMp4Path 提供转码后路径；前端播放优先用转码路径
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

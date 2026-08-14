@@ -4,10 +4,14 @@
       <div class="container">
         <h1 class="logo">SEE</h1>
         <nav>
+          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换到浅色' : '切换到深色'">
+            {{ isDark ? '☀️' : '🌙' }}
+          </button>
           <router-link to="/" class="nav-link">首页</router-link>
           <router-link to="/upload" class="nav-link">上传</router-link>
           <router-link to="/favorites" class="nav-link">收藏</router-link>
           <router-link to="/timeline" class="nav-link">时间线</router-link>
+          <router-link to="/calendar" class="nav-link">日历</router-link>
           <router-link to="/trash" class="nav-link">回收站</router-link>
           <router-link to="/search" class="nav-link">搜索</router-link>
           <span v-if="currentUser" class="user-info">
@@ -37,7 +41,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -46,6 +50,15 @@ const currentUser = computed(() => {
   const userStr = localStorage.getItem('user')
   return userStr ? JSON.parse(userStr) : null
 })
+
+const isDark = ref(localStorage.getItem('theme') !== 'light')
+document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+}
 
 const handleLogout = () => {
   localStorage.removeItem('token')
@@ -128,6 +141,24 @@ const handleLogout = () => {
           background: #81d4fa;
           border-radius: 2px;
         }
+      }
+    }
+
+    .theme-toggle {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+      margin-right: 0.25rem;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.22);
+        transform: scale(1.08);
       }
     }
 

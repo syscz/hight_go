@@ -15,6 +15,8 @@ public class Media {
 
     private String filePath;
 
+    private String videoMp4Path;
+
     private Long fileSize;
 
     private String fileType;

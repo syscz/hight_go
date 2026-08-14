@@ -65,7 +65,7 @@ public class AlbumService {
     }
 
     public Album getDefaultAlbum(Long userId) {
-        Album album = albumMapper.findByName("默认相册");
+        Album album = albumMapper.findByNameAndUserId("默认相册", userId);
         if (album != null) {
             return album;
         }

@@ -42,6 +42,14 @@
         LIMIT 1
     </select>
 
+    <select id="findByNameAndUserId" resultMap="albumMap">
+        SELECT <include refid="albumColumns"/>
+        FROM albums a
+        WHERE a.name = #{name} AND a.user_id = #{userId}
+        ORDER BY a.id
+        LIMIT 1
+    </select>
+
     <insert id="insert" parameterType="Album" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO albums (name, description, cover_image, media_count, user_id, created_at, updated_at)
         VALUES (#{name}, #{description}, #{coverImage}, #{mediaCount}, #{userId}, NOW(), NOW())

@@ -127,6 +127,20 @@
 - [x] 构建验证 + 线上部署（index-C8Nhj0W0.js，HTML no-cache 自动取新版）
 - **状态：** complete
 
+## 阶段 13：新功能 2+3+4+6+8+10+12（用户确认）
+### 后端
+- [x] 批量打包下载：POST /api/media/download 流式 zip（HttpServletResponse）
+- [x] 批量编辑：POST /api/media/batch/update（title/description/tagIds）
+- [x] 多用户隔离：修复默认相册按 userId 归属（findByNameAndUserId）
+- [x] 视频转码：ffmpeg 4.4.1（npmmirror 国内镜像安装）+ 异步单线程转 mp4 + videoMp4Path 字段
+### 前端
+- [x] 批量下载按钮（Home/Album）
+- [x] 批量编辑弹窗（Home/Album：标题/描述/标签）
+- [x] 日历视图（/calendar 路由 + 导航入口，月份网格 + 每日缩略图）
+- [x] 幻灯片播放（Album 全屏自动轮播 + 手动切换 + 暂停）
+- [x] 浅色/深色主题切换（导航按钮 + CSS 变量覆盖 + localStorage）
+- **状态：** complete
+
 ## 已做决策
 | 决策 | 理由 |
 |------|------|

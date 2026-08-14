@@ -15,6 +15,8 @@ public interface AlbumMapper {
 
     Album findByName(@Param("name") String name);
 
+    Album findByNameAndUserId(@Param("name") String name, @Param("userId") Long userId);
+
     int insert(Album album);
 
     int update(Album album);

@@ -75,3 +75,45 @@ body {
   background: rgba(79, 195, 247, 0.35);
   color: #fff;
 }
+
+/* 浅色主题 */
+html[data-theme='light'] {
+  --bg-base: #eef2f7;
+  --bg-elevated: #ffffff;
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-strong: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(15, 30, 50, 0.1);
+  --text-primary: rgba(15, 30, 50, 0.9);
+  --text-secondary: rgba(15, 30, 50, 0.62);
+  --text-muted: rgba(15, 30, 50, 0.4);
+  --shadow-card: 0 8px 30px rgba(20, 40, 70, 0.12);
+  --shadow-glow: 0 0 0 1px rgba(79, 195, 247, 0.45), 0 8px 30px rgba(79, 195, 247, 0.18);
+
+  --el-bg-color: #ffffff;
+  --el-bg-color-overlay: #ffffff;
+  --el-border-color: rgba(15, 30, 50, 0.18);
+  --el-border-color-light: rgba(15, 30, 50, 0.12);
+  --el-border-color-lighter: rgba(15, 30, 50, 0.08);
+  --el-text-color-primary: #303133;
+  --el-text-color-regular: #606266;
+  --el-text-color-secondary: #909399;
+  --el-text-color-placeholder: #a8abb2;
+  --el-fill-color-blank: #ffffff;
+  --el-fill-color-light: rgba(15, 30, 50, 0.05);
+  --el-fill-color-lighter: rgba(15, 30, 50, 0.03);
+  --el-mask-color: rgba(255, 255, 255, 0.6);
+  --el-disabled-bg-color: rgba(15, 30, 50, 0.04);
+}
+
+html[data-theme='light'] body {
+  background:
+    radial-gradient(1100px 520px at 85% -10%, rgba(79, 195, 247, 0.14), transparent 60%),
+    #eef2f7;
+}
+
+html[data-theme='light'] .hero-title {
+  background: linear-gradient(135deg, #10233a 0%, #29b6f6 55%, #4fc3f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

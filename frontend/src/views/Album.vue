@@ -7,14 +7,42 @@
       </div>
       <div class="header-actions">
         <el-button round @click="goBack">← 返回</el-button>
+        <el-button round type="primary" @click="startSlideshow" v-if="mediaList.length > 0">▶ 播放</el-button>
       </div>
     </header>
+
+    <div v-if="slideshowVisible && ssMedia" class="slideshow-overlay" @click.self="closeSlideshow">
+      <button class="ss-close" @click="closeSlideshow">×</button>
+      <button class="ss-prev" @click="ssPrev">‹</button>
+      <div class="ss-stage">
+        <img
+          v-if="ssMedia.mediaType === 'image'"
+          :src="getMediaUrl(ssMedia.filePath)"
+          :alt="ssMedia.title"
+        />
+        <video
+          v-else
+          :src="getMediaUrl(ssMedia.filePath)"
+          controls
+          autoplay
+        ></video>
+        <div class="ss-caption">
+          {{ ssMedia.title || ssMedia.filename }} · {{ ssIndex + 1 }}/{{ filteredMediaList.length }}
+        </div>
+      </div>
+      <button class="ss-next" @click="ssNext">›</button>
+      <div class="ss-controls">
+        <button @click="togglePlay">{{ playing ? '⏸ 暂停' : '▶ 播放' }}</button>
+      </div>
+    </div>
 
     <div class="container">
       <div v-if="selectedIds.length > 0" class="batch-actions">
         <span class="selected-count">已选择 {{ selectedIds.length }} 项</span>
         <el-button type="primary" @click="handleBatchMove">移动到</el-button>
         <el-button type="danger" @click="handleBatchDelete">删除</el-button>
+        <el-button type="primary" @click="showEditDialog">编辑</el-button>
+        <el-button type="success" @click="batchDownload">下载</el-button>
         <el-button @click="clearSelection">取消</el-button>
       </div>
 
@@ -80,6 +108,26 @@
         </template>
       </el-dialog>
 
+      <el-dialog v-model="editDialogVisible" title="批量编辑" width="400px">
+        <el-form label-width="70px">
+          <el-form-item label="标题">
+            <el-input v-model="editForm.title" placeholder="留空则不修改" />
+          </el-form-item>
+          <el-form-item label="描述">
+            <el-input v-model="editForm.description" type="textarea" :rows="2" placeholder="留空则不修改" />
+          </el-form-item>
+          <el-form-item label="标签">
+            <el-select v-model="editForm.tagIds" multiple collapse-tags placeholder="选择标签" style="width: 100%">
+              <el-option v-for="t in allTags" :key="t.id" :label="t.name" :value="t.id" />
+            </el-select>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleBatchEdit">保存</el-button>
+        </template>
+      </el-dialog>
+
       <div v-if="!loading && filteredMediaList.length === 0" class="empty-state">
         <div class="empty-icon">📭</div>
         <p>还没有作品</p>
@@ -90,10 +138,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import api from '@/api/index'
 
 const route = useRoute()
 const router = useRouter()
@@ -104,6 +153,13 @@ const activeType = ref('all')
 const selectedIds = ref([])
 const moveDialogVisible = ref(false)
 const targetAlbumId = ref(null)
+const editDialogVisible = ref(false)
+const editForm = ref({ title: '', description: '', tagIds: [] })
+const allTags = ref([])
+const slideshowVisible = ref(false)
+const ssIndex = ref(0)
+const playing = ref(false)
+let ssTimer = null
 
 const mediaList = computed(() => mediaStore.mediaList)
 const loading = computed(() => mediaStore.loading)
@@ -116,6 +172,8 @@ const filteredMediaList = computed(() => {
   if (activeType.value === 'all') return mediaList.value
   return mediaList.value.filter(m => m.mediaType === activeType.value)
 })
+
+const ssMedia = computed(() => filteredMediaList.value[ssIndex.value] || null)
 
 const fetchAlbumData = async () => {
   const albumId = route.params.id
@@ -151,6 +209,75 @@ const toggleSelection = (id) => {
 
 const clearSelection = () => {
   selectedIds.value = []
+}
+
+const showEditDialog = () => {
+  editForm.value = { title: '', description: '', tagIds: [] }
+  editDialogVisible.value = true
+}
+
+const handleBatchEdit = async () => {
+  try {
+    const payload = { mediaIds: selectedIds.value }
+    if (editForm.value.title) payload.title = editForm.value.title
+    if (editForm.value.description) payload.description = editForm.value.description
+    if (editForm.value.tagIds.length) payload.tagIds = editForm.value.tagIds
+    await api.post('/media/batch/update', payload)
+    ElMessage.success('更新成功')
+    editDialogVisible.value = false
+    selectedIds.value = []
+    await fetchAlbumData()
+  } catch (error) {
+    ElMessage.error('更新失败')
+  }
+}
+
+const batchDownload = async () => {
+  try {
+    const response = await api.post('/media/download', { mediaIds: selectedIds.value }, { responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'media.zip'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    ElMessage.error('下载失败')
+  }
+}
+
+const startSlideshow = () => {
+  ssIndex.value = 0
+  slideshowVisible.value = true
+  playing.value = true
+  ssAuto()
+}
+
+const ssAuto = () => {
+  clearInterval(ssTimer)
+  if (playing.value && filteredMediaList.value.length > 1) {
+    ssTimer = setInterval(() => {
+      ssIndex.value = (ssIndex.value + 1) % filteredMediaList.value.length
+    }, 3000)
+  }
+}
+
+const ssNext = () => {
+  ssIndex.value = (ssIndex.value + 1) % filteredMediaList.value.length
+}
+
+const ssPrev = () => {
+  ssIndex.value = (ssIndex.value - 1 + filteredMediaList.value.length) % filteredMediaList.value.length
+}
+
+const togglePlay = () => {
+  playing.value = !playing.value
+  ssAuto()
+}
+
+const closeSlideshow = () => {
+  clearInterval(ssTimer)
+  slideshowVisible.value = false
 }
 
 const handleBatchMove = () => {
@@ -225,6 +352,11 @@ onMounted(() => {
   mediaStore.fetchAlbums().then(() => {
     fetchAlbumData()
   })
+  api.get('/tags').then(r => { allTags.value = r.data }).catch(() => {})
+})
+
+onUnmounted(() => {
+  clearInterval(ssTimer)
 })
 </script>
 
@@ -452,6 +584,107 @@ onMounted(() => {
   .empty-hint {
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.slideshow-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 12, 0.96);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ss-stage {
+  max-width: 86vw;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  img,
+  video {
+    max-width: 86vw;
+    max-height: 76vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
+  }
+}
+
+.ss-caption {
+  margin-top: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+}
+
+.ss-close {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.ss-prev,
+.ss-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(79, 195, 247, 0.3);
+  }
+}
+
+.ss-prev {
+  left: 24px;
+}
+
+.ss-next {
+  right: 24px;
+}
+
+.ss-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  button {
+    padding: 0.5rem 1.2rem;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+
+    &:hover {
+      background: rgba(79, 195, 247, 0.3);
+    }
   }
 }
 

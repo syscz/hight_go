@@ -57,4 +57,11 @@ public interface MediaMapper {
     int incrementViewCount(@Param("id") Long id);
 
     List<Media> findExpiredDeleted(@Param("days") int days);
+
+    int updateVideoMp4Path(@Param("id") Long id, @Param("videoMp4Path") String videoMp4Path);
+
+    int batchUpdateTitle(@Param("ids") List<Long> ids, @Param("userId") Long userId,
+                         @Param("title") String title, @Param("description") String description);
+
+    List<Media> findByIds(@Param("ids") List<Long> ids, @Param("userId") Long userId);
 }

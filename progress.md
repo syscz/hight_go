@@ -195,6 +195,22 @@
 - 其他：Home 弹窗/输入框/筛选按钮等残留浅色 → 深色玻璃化
 - 部署：index-hYYxtVzv.js（HTML no-cache，普通刷新即见）
 
+### 补充：2026-08-14 新功能 2+3+4+6+8+10+12 上线
+- 后端：
+  - 批量下载：POST /api/media/download 流式 zip（HttpServletResponse 直写，避免大文件 OOM）
+  - 批量编辑：POST /api/media/batch/update（title/description/tagIds 可选）
+  - 多用户隔离：getDefaultAlbum 改为 findByNameAndUserId，默认相册按用户独立
+  - 视频转码：服务器安装 ffmpeg 4.4.1（npmmirror 国内镜像，海外源不通）；VideoTranscodeService 单线程异步转 H.264 mp4（veryfast/crf28/faststart）；media 表加 video_mp4_path；MediaVO 返回转码路径
+- 前端：
+  - 批量下载按钮（Home/Album，blob 下载 media.zip）
+  - 批量编辑弹窗（标题/描述/标签）
+  - 日历视图 /calendar（月份网格 + 有媒体日期标记 + 点击看当日缩略图）
+  - 幻灯片播放（Album 全屏自动轮播 3s + 上一张/下一张/暂停/退出）
+  - 主题切换（导航按钮，深色/浅色 CSS 变量覆盖 + localStorage 持久化）
+- 验证（线上）：转码 20 秒内生成 _conv.mp4；批量编辑 200；zip 下载 43KB magic PK；新用户相册隔离正确；测试数据已清理
+- 部署：index-BINTZtOQ.js
+- 创建/修改：Media/MediaVO、MediaMapper(+xml)、AlbumMapper(+xml)、MediaService、AlbumService、VideoTranscodeService、MediaController、BatchUpdateRequestDto、Calendar.vue、Album.vue、Home.vue、App.vue、router、style.css
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

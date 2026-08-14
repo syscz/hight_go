@@ -111,6 +111,13 @@ public class FileUploadService {
     }
 
     /**
+     * 将文件访问 URL 解析为磁盘路径
+     */
+    public Path resolveUrl(String fileUrl) {
+        return Paths.get(uploadPath, fileUrl.replace(urlPrefix + "/", ""));
+    }
+
+    /**
      * 为图片生成缩略图，返回缩略图访问 URL；不支持的格式或小于最大宽度时返回原图 URL
      */
     public String generateThumbnail(String originalUrl, int maxWidth) {

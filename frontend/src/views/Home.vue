@@ -111,6 +111,8 @@
           <span>已选择 {{ selectedMedia.length }} 项</span>
           <el-button size="small" @click="clearSelection">取消选择</el-button>
           <el-button size="small" type="primary" @click="showMoveDialog">移动到</el-button>
+          <el-button size="small" @click="showEditDialog">编辑</el-button>
+          <el-button size="small" type="success" @click="batchDownload">下载</el-button>
           <el-button size="small" type="danger" @click="batchDelete">移入回收站</el-button>
         </div>
         <div v-if="loading" class="media-grid skeleton-grid">
@@ -209,6 +211,26 @@
         <el-button type="primary" @click="handleMove">移动</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="editDialogVisible" title="批量编辑" width="400px">
+      <el-form label-width="70px">
+        <el-form-item label="标题">
+          <el-input v-model="editForm.title" placeholder="留空则不修改" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="editForm.description" type="textarea" :rows="2" placeholder="留空则不修改" />
+        </el-form-item>
+        <el-form-item label="标签">
+          <el-select v-model="editForm.tagIds" multiple collapse-tags placeholder="选择标签" style="width: 100%">
+            <el-option v-for="t in tags" :key="t.id" :label="t.name" :value="t.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchEdit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -240,6 +262,8 @@ const animatedStats = ref(null)
 const selectedMedia = ref([])
 const moveDialogVisible = ref(false)
 const targetAlbumId = ref(null)
+const editDialogVisible = ref(false)
+const editForm = ref({ title: '', description: '', tagIds: [] })
 const tags = computed(() => mediaStore.tags)
 let searchDebounce = null
 
@@ -420,6 +444,41 @@ const toggleSelect = (id, event) => {
 
 const clearSelection = () => {
   selectedMedia.value = []
+}
+
+const showEditDialog = () => {
+  editForm.value = { title: '', description: '', tagIds: [] }
+  editDialogVisible.value = true
+}
+
+const handleBatchEdit = async () => {
+  try {
+    const payload = { mediaIds: selectedMedia.value }
+    if (editForm.value.title) payload.title = editForm.value.title
+    if (editForm.value.description) payload.description = editForm.value.description
+    if (editForm.value.tagIds.length) payload.tagIds = editForm.value.tagIds
+    await api.post('/media/batch/update', payload)
+    ElMessage.success('更新成功')
+    editDialogVisible.value = false
+    selectedMedia.value = []
+    fetchMediaList()
+  } catch (error) {
+    ElMessage.error('更新失败')
+  }
+}
+
+const batchDownload = async () => {
+  try {
+    const response = await api.post('/media/download', { mediaIds: selectedMedia.value }, { responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'media.zip'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    ElMessage.error('下载失败')
+  }
 }
 
 const showMoveDialog = () => {

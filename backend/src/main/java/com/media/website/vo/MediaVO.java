@@ -13,6 +13,7 @@ public class MediaVO {
     private String filename;
     private String originalFilename;
     private String filePath;
+    private String videoMp4Path;
     private Long fileSize;
     private String fileType;
     private Media.MediaType mediaType;
@@ -39,6 +40,7 @@ public class MediaVO {
         vo.setFilename(media.getFilename());
         vo.setOriginalFilename(media.getOriginalFilename());
         vo.setFilePath(media.getFilePath());
+        vo.setVideoMp4Path(media.getVideoMp4Path());
         vo.setFileSize(media.getFileSize());
         vo.setFileType(media.getFileType());
         vo.setMediaType(media.getMediaType());

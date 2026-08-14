@@ -2,6 +2,7 @@ package com.media.website.controller;
 
 import com.media.website.dto.BatchDeleteRequestDto;
 import com.media.website.dto.BatchMoveRequestDto;
+import com.media.website.dto.BatchUpdateRequestDto;
 import com.media.website.dto.TagSetRequestDto;
 import com.media.website.entity.Media;
 import com.media.website.service.MediaService;
@@ -11,7 +12,9 @@ import com.media.website.vo.ApiMessageVO;
 import com.media.website.vo.MediaVO;
 import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
+import com.media.website.service.FileUploadService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +32,48 @@ public class MediaController {
 
     private final MediaService mediaService;
     private final AuthUtils authUtils;
+    private final FileUploadService fileUploadService;
+
+    @PostMapping("/download")
+    public void downloadMedia(@Valid @RequestBody BatchDeleteRequestDto request,
+                              @RequestHeader("Authorization") String authHeader,
+                              HttpServletResponse response) throws java.io.IOException {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            response.sendError(401);
+            return;
+        }
+        var mediaList = mediaService.getMediaByIds(userId, request.getMediaIds());
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=media.zip");
+        try (var zos = new java.util.zip.ZipOutputStream(response.getOutputStream())) {
+            for (var media : mediaList) {
+                var path = fileUploadService.resolveUrl(media.getFilePath());
+                if (java.nio.file.Files.exists(path)) {
+                    String name = media.getOriginalFilename() != null ? media.getOriginalFilename() : media.getFilename();
+                    zos.putNextEntry(new java.util.zip.ZipEntry(name));
+                    java.nio.file.Files.copy(path, zos);
+                    zos.closeEntry();
+                }
+            }
+        }
+    }
+
+    @PostMapping("/batch/update")
+    public ResponseEntity<?> batchUpdate(@Valid @RequestBody BatchUpdateRequestDto request,
+                                         @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            mediaService.batchUpdate(userId, request.getMediaIds(), request.getTitle(),
+                    request.getDescription(), request.getTagIds());
+            return ResponseEntity.ok(new ApiMessageVO("更新成功"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
+        }
+    }
 
     @GetMapping
     public ResponseEntity<?> getMediaList(

@@ -27,6 +27,7 @@ public class MediaService {
     private final AlbumService albumService;
     private final FileUploadService fileUploadService;
     private final TagMapper tagMapper;
+    private final VideoTranscodeService videoTranscodeService;
 
     public List<Media> getMediaList(Long userId, Media.MediaType type, Long categoryId, Long albumId,
                                     String keyword, Boolean favorite, Boolean deleted, Long tagId) {
@@ -156,6 +157,9 @@ public class MediaService {
 
             mediaMapper.insert(media);
             albumService.incrementMediaCount(album.getId());
+            if (media.getMediaType() == Media.MediaType.video) {
+                videoTranscodeService.transcodeAsync(media);
+            }
             return media;
         } catch (IOException e) {
             throw new RuntimeException("文件上传失败", e);
@@ -240,5 +244,27 @@ public class MediaService {
 
     public List<Media> search(Long userId, String keyword) {
         return mediaMapper.searchByKeyword(userId, keyword);
+    }
+
+    public List<Media> getMediaByIds(Long userId, List<Long> mediaIds) {
+        if (mediaIds == null || mediaIds.isEmpty()) {
+            return java.util.List.of();
+        }
+        return mediaMapper.findByIds(mediaIds, userId);
+    }
+
+    public void batchUpdate(Long userId, List<Long> mediaIds, String title, String description,
+                            List<Long> tagIds) {
+        if (mediaIds == null || mediaIds.isEmpty()) {
+            return;
+        }
+        if (title != null || description != null) {
+            mediaMapper.batchUpdateTitle(mediaIds, userId, title, description);
+        }
+        if (tagIds != null) {
+            for (Long mediaId : mediaIds) {
+                setMediaTags(userId, mediaId, tagIds);
+            }
+        }
     }
 }
