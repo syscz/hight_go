@@ -181,10 +181,11 @@ const handleSubmit = async () => {
         formData.append('albumId', form.value.albumId)
       }
 
-      uploadProgress.value[index].percentage = 50
       uploadProgress.value[index].message = '传输中...'
 
-      await mediaStore.uploadMedia(formData)
+      await mediaStore.uploadMedia(formData, (p) => {
+        uploadProgress.value[index].percentage = Math.max(p, 10)
+      })
 
       uploadProgress.value[index].percentage = 100
       uploadProgress.value[index].status = 'success'

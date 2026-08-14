@@ -48,6 +48,9 @@
           <el-button type="danger" @click="handleDelete">
             <el-icon><Delete /></el-icon> 删除
           </el-button>
+          <el-button @click="copyLink">
+            <el-icon><Link /></el-icon> 复制链接
+          </el-button>
         </div>
         <div class="info-description">
           <h3>描述</h3>
@@ -163,7 +166,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Calendar, Document, View, Delete } from '@element-plus/icons-vue'
+import { ArrowLeft, Calendar, Document, View, Delete, Link } from '@element-plus/icons-vue'
 import api from '@/api/index'
 
 const route = useRoute()
@@ -272,6 +275,15 @@ const handleDelete = async () => {
   } catch (error) {
     console.error('删除媒体失败:', error)
     ElMessage.error('删除失败')
+  }
+}
+
+const copyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    ElMessage.success('链接已复制')
+  } catch (error) {
+    ElMessage.error('复制失败')
   }
 }
 
@@ -445,6 +457,8 @@ onMounted(() => {
     .video-preview {
       max-width: 100%;
       max-height: 600px;
+      border-radius: 8px;
+      background: #000;
     }
   }
 

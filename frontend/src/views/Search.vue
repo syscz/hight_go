@@ -53,7 +53,7 @@
               <div v-else class="video-icon">🎬</div>
             </div>
             <div class="result-info">
-              <div class="result-title">{{ item.title || item.filename }}</div>
+              <div class="result-title" v-html="highlight(item.title || item.filename)"></div>
               <div class="result-meta">{{ item.mediaType === 'image' ? '🖼️ 图片' : '🎬 视频' }} · {{ formatSize(item.fileSize) }}</div>
             </div>
           </div>
@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Loading } from '@element-plus/icons-vue'
 import api from '../api'
@@ -81,6 +81,17 @@ const searchType = ref('web')
 const loading = ref(false)
 const searched = ref(false)
 const fileResults = ref([])
+let debounceTimer = null
+
+watch(searchQuery, () => {
+  if (searchType.value !== 'file') return
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    if (searchQuery.value.trim()) {
+      searchFiles()
+    }
+  }, 400)
+})
 
 const doSearch = () => {
   if (!searchQuery.value.trim()) return
@@ -111,6 +122,20 @@ const searchFiles = async () => {
 
 const viewMedia = (id) => {
   router.push({ name: 'MediaDetail', params: { id } })
+}
+
+const highlight = (text) => {
+  if (!text || !searchQuery.value.trim()) return text
+  const kw = searchQuery.value.trim()
+  const escaped = String(text).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]))
+  const safe = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return escaped.replace(new RegExp(`(${safe})`, 'gi'), '<mark>$1</mark>')
 }
 
 const getMediaUrl = (filePath) => {
@@ -278,7 +303,7 @@ const goBack = () => {
     }
   }
 
-  .result-info {
+.result-info {
     flex: 1;
     min-width: 0;
 
@@ -289,6 +314,13 @@ const goBack = () => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      :deep(mark) {
+        background: #ffe58f;
+        color: #333;
+        border-radius: 2px;
+        padding: 0 1px;
+      }
     }
 
     .result-meta {

@@ -211,4 +211,10 @@
         WHERE id = #{id}
     </update>
 
+    <select id="findExpiredDeleted" resultMap="mediaResultMap">
+        <include refid="mediaSelect"/>
+        WHERE m.is_deleted = TRUE AND m.deleted_at IS NOT NULL
+          AND m.deleted_at &lt; DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+    </select>
+
 </mapper>

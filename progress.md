@@ -151,6 +151,28 @@
   - 前端：Home.vue（分页+标签筛选+懒加载）、MediaDetail.vue（标签+懒加载）、Favorites/Search/Trash/Timeline（懒加载）
   - 服务器：nginx media.conf（gzip_static）、assets/*.gz
 
+### 补充：2026-08-14 A+B 升级上线（v1.7）
+- A 技术：
+  - A3 缩略图：上传图片生成 480px 缩略图（ImageIO，webp/gif 降级原图），coverImage 指向缩略图；线上实测 thumb_*.jpg
+  - A4 上传进度：store uploadMedia 支持 onUploadProgress，Upload 页真实百分比
+  - A5 回收站清理：@EnableScheduling + RecycleCleanupTask，每天 03:30 清理 30 天前回收站（原图+缩略图+记录）
+  - A6 视频 Range：nginx 静态文件默认支持（未改动，验证方式记录）
+  - A8 搜索防抖（400ms 自动搜索）+ 结果关键词 <mark> 高亮（含 XSS 转义）
+  - A9 统计数字动画（totalMedia count-up）
+  - A10 详情页"复制链接"按钮
+  - A1 HTTPS/A2 CDN：需域名，待用户确认
+- B 美化：
+  - B1 相册卡片真实封面：后端 Album 查询带出相册内首张媒体封面（computed_cover_image），Home 卡片显示封面图
+  - B2 瀑布流：media-grid 改 CSS columns masonry，图片自适应高度
+  - B3 主题：style.css 覆盖 Element Plus 主色为雪山蓝白（#4fc3f7 系）
+  - B5 骨架屏：Home 加载显示 el-skeleton 卡片
+  - B6 页面过渡：App.vue 已有 fade transition（确认存在）
+  - B8 视频播放器样式：圆角+黑底
+  - B9 卡片光影/封面 hover 缩放
+  - B10 网格/列表视图切换 + 中文字体栈
+- 修复：永久删除时清理缩略图文件（初版漏删，已修并重新部署）
+- 线上验证：缩略图生成、相册封面带出（默认相册/老数据兼容）、分页 total 22、前端 index-CQn81RXg.js
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

@@ -5,6 +5,7 @@ import com.media.website.mapper.MediaMapper;
 import com.media.website.mapper.TagMapper;
 import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class MediaService {
 
@@ -139,7 +141,7 @@ public class MediaService {
 
             if ("image".equals(fileType)) {
                 media.setMediaType(Media.MediaType.image);
-                media.setCoverImage(fileUrl);
+                media.setCoverImage(fileUploadService.generateThumbnail(fileUrl, 480));
             } else if ("video".equals(fileType)) {
                 media.setMediaType(Media.MediaType.video);
             }
@@ -225,6 +227,9 @@ public class MediaService {
         return getMediaById(userId, id).map(media -> {
             try {
                 fileUploadService.deleteFile(media.getFilePath());
+                if (media.getCoverImage() != null && media.getCoverImage().contains("thumb_")) {
+                    fileUploadService.deleteFile(media.getCoverImage());
+                }
                 mediaMapper.deleteById(id);
             } catch (IOException e) {
                 throw new RuntimeException("永久删除文件失败", e);

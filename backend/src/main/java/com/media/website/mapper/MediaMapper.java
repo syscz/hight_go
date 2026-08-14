@@ -55,4 +55,6 @@ public interface MediaMapper {
     int deleteById(@Param("id") Long id);
 
     int incrementViewCount(@Param("id") Long id);
+
+    List<Media> findExpiredDeleted(@Param("days") int days);
 }

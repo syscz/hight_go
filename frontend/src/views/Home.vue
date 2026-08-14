@@ -29,6 +29,12 @@
       </div>
       <div class="toolbar-right">
         <div class="search-box">
+          <div class="view-layout-toggle">
+            <el-radio-group v-model="viewLayout" size="large">
+              <el-radio-button label="grid">▦</el-radio-button>
+              <el-radio-button label="list">☰</el-radio-button>
+            </el-radio-group>
+          </div>
           <el-select
             v-model="selectedTagId"
             placeholder="标签筛选"
@@ -63,7 +69,7 @@
     </div>
 
     <div v-if="stats" class="stats-bar">
-      <span>总计: {{ stats.totalMedia }} 个</span>
+      <span>总计: {{ animatedStats?.totalMedia ?? stats.totalMedia }} 个</span>
       <span>📷 {{ stats.imageCount }}</span>
       <span>🎬 {{ stats.videoCount }}</span>
       <span>❤️ {{ stats.favoriteCount }} 收藏</span>
@@ -77,10 +83,13 @@
             v-for="(album, index) in albums"
             :key="album.id"
             class="album-item"
-            :class="`album-item--color-${index % 5}`"
+            :class="[`album-item--color-${index % 5}`, { 'has-cover': album.coverImage }]"
             @click="viewAlbum(album.id)"
           >
-            <div class="album-icon">📁</div>
+            <div v-if="album.coverImage" class="album-cover">
+              <img :src="getCoverUrl(album)" :alt="album.name" loading="lazy" />
+            </div>
+            <div v-else class="album-icon">📁</div>
             <div class="album-name">{{ album.name }}</div>
             <div class="album-count">🎨 {{ album.mediaCount || 0 }} 个作品</div>
             <el-button
@@ -103,7 +112,17 @@
           <el-button size="small" type="primary" @click="showMoveDialog">移动到</el-button>
           <el-button size="small" type="danger" @click="batchDelete">移入回收站</el-button>
         </div>
-        <div v-loading="loading" class="media-grid">
+        <div v-if="loading" class="media-grid skeleton-grid">
+          <div v-for="n in 8" :key="n" class="media-item skeleton-item">
+            <el-skeleton animated>
+              <template #template>
+                <el-skeleton-item variant="image" style="width: 100%; height: 180px" />
+                <el-skeleton-item variant="text" style="width: 60%; margin-top: 8px" />
+              </template>
+            </el-skeleton>
+          </div>
+        </div>
+        <div v-else v-loading="loading" class="media-grid" :class="{ 'list-mode': viewLayout === 'list' }">
           <div
             v-for="item in mediaList"
             :key="item.id"
@@ -214,11 +233,35 @@ const currentPage = ref(1)
 const pageSize = ref(24)
 const totalMedia = ref(0)
 const selectedTagId = ref(null)
+const viewLayout = ref('grid')
 const stats = ref(null)
+const animatedStats = ref(null)
 const selectedMedia = ref([])
 const moveDialogVisible = ref(false)
 const targetAlbumId = ref(null)
 const tags = computed(() => mediaStore.tags)
+let searchDebounce = null
+
+watch(searchKeyword, () => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    if (viewMode.value !== 'albums') {
+      currentPage.value = 1
+      fetchMediaList()
+    }
+  }, 400)
+})
+
+const animateNumber = (from, to, duration, onUpdate) => {
+  const start = performance.now()
+  const tick = (now) => {
+    const progress = Math.min((now - start) / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    onUpdate(Math.round(from + (to - from) * eased))
+    if (progress < 1) requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+}
 
 const createAlbumDialogVisible = ref(false)
 const newAlbumName = ref('')
@@ -277,6 +320,12 @@ const fetchStats = async () => {
   try {
     const response = await api.get('/media/stats')
     stats.value = response.data
+    if (stats.value.totalMedia != null) {
+      animateNumber(0, stats.value.totalMedia, 900, (value) => {
+        if (!animatedStats.value) animatedStats.value = {}
+        animatedStats.value.totalMedia = value
+      })
+    }
   } catch (error) {
     console.error('获取统计失败', error)
   }
@@ -304,6 +353,7 @@ const fetchMediaList = async () => {
 }
 
 const handleSearch = () => {
+  clearTimeout(searchDebounce)
   currentPage.value = 1
   viewMode.value = 'all'
 }
@@ -511,6 +561,38 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
 
+  &.has-cover {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .album-cover {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+  }
+
+  &:hover .album-cover img {
+    transform: scale(1.08);
+  }
+
+  &.has-cover .album-name,
+  &.has-cover .album-count {
+    padding: 0.4rem 0.75rem;
+  }
+
+  &.has-cover .delete-btn {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
   &:hover {
     border-color: #81d4fa;
     background: rgba(255, 255, 255, 0.95);
@@ -654,6 +736,22 @@ onMounted(() => {
         width: 140px;
       }
 
+      .view-layout-toggle {
+        :deep(.el-radio-button__inner) {
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: rgba(255, 255, 255, 0.85);
+          padding: 0.6rem 0.9rem;
+          font-size: 1rem;
+        }
+
+        :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+          background: rgba(129, 212, 250, 0.4);
+          border-color: #81d4fa;
+          color: white;
+        }
+      }
+
       .search-input {
         width: 240px;
 
@@ -733,10 +831,61 @@ onMounted(() => {
 }
 
 .media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
+  columns: 3;
+  column-gap: 1rem;
   margin-top: 1rem;
+
+  @media (max-width: 1024px) {
+    columns: 2;
+  }
+
+  @media (max-width: 600px) {
+    columns: 2;
+    column-gap: 0.65rem;
+  }
+
+  &.list-mode {
+    columns: 1;
+
+    .media-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+
+      img,
+      video {
+        width: 120px;
+        height: 90px;
+        flex-shrink: 0;
+        border-radius: 8px;
+      }
+
+      .media-checkbox {
+        position: static;
+        flex-shrink: 0;
+      }
+
+      .media-overlay {
+        position: static;
+        background: none;
+        padding: 0;
+        flex: 1;
+
+        .media-title {
+          color: #333;
+          font-size: 0.9rem;
+          white-space: normal;
+        }
+      }
+
+      .favorite-btn {
+        position: static;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+    }
+  }
 }
 
 .media-item {
@@ -747,6 +896,8 @@ onMounted(() => {
   background: rgba(255,255,255,0.9);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: all 0.3s;
+  break-inside: avoid;
+  margin-bottom: 1rem;
 
   &:hover {
     transform: translateY(-4px);
@@ -759,8 +910,17 @@ onMounted(() => {
 
   img, video {
     width: 100%;
-    height: 150px;
     object-fit: cover;
+  }
+
+  img {
+    display: block;
+    height: auto;
+  }
+
+  video {
+    display: block;
+    height: 150px;
   }
 
   .media-checkbox {
@@ -822,6 +982,13 @@ onMounted(() => {
   }
 }
 
+.skeleton-grid {
+  .media-item {
+    padding: 0.65rem;
+    margin-bottom: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     padding: 1rem;
@@ -875,6 +1042,12 @@ onMounted(() => {
 
         .tag-filter {
           width: 100%;
+        }
+
+        .view-layout-toggle {
+          :deep(.el-radio-button__inner) {
+            padding: 0.4rem 0.75rem;
+          }
         }
 
         .search-input {

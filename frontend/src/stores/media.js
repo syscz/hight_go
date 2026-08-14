@@ -85,13 +85,18 @@ export const useMediaStore = defineStore('media', {
       }
     },
 
-    async uploadMedia(formData) {
+    async uploadMedia(formData, onProgress) {
       this.loading = true
       this.error = null
       try {
         const response = await api.post('/media', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: (e) => {
+            if (onProgress && e.total) {
+              onProgress(Math.round((e.loaded / e.total) * 100))
+            }
           }
         })
         this.mediaList.unshift(response.data)

@@ -25,6 +25,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  /* Element Plus 主题色：雪山蓝白 */
+  --el-color-primary: #4fc3f7;
+  --el-color-primary-light-3: #81d4fa;
+  --el-color-primary-light-5: #b3e5fc;
+  --el-color-primary-light-7: #e1f5fe;
+  --el-color-primary-light-8: #e8f6fc;
+  --el-color-primary-light-9: #f3fbff;
+  --el-color-primary-dark-2: #29b6f6;
+
   @media (max-width: 1024px) {
     font-size: 16px;
   }
@@ -52,6 +61,8 @@
 
 body {
   margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 h1,

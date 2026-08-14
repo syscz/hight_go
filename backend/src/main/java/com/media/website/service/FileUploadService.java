@@ -11,6 +11,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -103,6 +107,46 @@ public class FileUploadService {
         if (Files.exists(path)) {
             Files.delete(path);
             log.info("删除文件: {}", path);
+        }
+    }
+
+    /**
+     * 为图片生成缩略图，返回缩略图访问 URL；不支持的格式或小于最大宽度时返回原图 URL
+     */
+    public String generateThumbnail(String originalUrl, int maxWidth) {
+        String relative = originalUrl.replace(urlPrefix + "/", "");
+        Path src = Paths.get(uploadPath, relative);
+        if (!Files.exists(src)) {
+            return originalUrl;
+        }
+        String fileName = src.getFileName().toString();
+        String ext = FilenameUtils.getExtension(fileName).toLowerCase();
+        if (!"jpg".equals(ext) && !"jpeg".equals(ext) && !"png".equals(ext) && !"bmp".equals(ext)) {
+            return originalUrl;
+        }
+        try {
+            BufferedImage img = ImageIO.read(src.toFile());
+            if (img == null || img.getWidth() <= maxWidth) {
+                return originalUrl;
+            }
+            int w = img.getWidth();
+            int h = img.getHeight();
+            int newH = (int) Math.round((double) h * maxWidth / w);
+            BufferedImage scaled = new BufferedImage(maxWidth, newH, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = scaled.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(img, 0, 0, maxWidth, newH, null);
+            g.dispose();
+
+            String base = fileName.substring(0, fileName.lastIndexOf('.'));
+            String thumbName = "thumb_" + base + ".jpg";
+            Path parent = src.getParent();
+            ImageIO.write(scaled, "jpg", parent.resolve(thumbName).toFile());
+            String datePath = parent.getFileName().toString();
+            return urlPrefix + "/" + datePath + "/" + thumbName;
+        } catch (Exception e) {
+            log.warn("生成缩略图失败，使用原图: {}", originalUrl, e);
+            return originalUrl;
         }
     }
 }
