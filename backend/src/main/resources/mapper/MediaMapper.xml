@@ -21,82 +21,145 @@
         <result property="deletedAt" column="deleted_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
-        <association property="category" column="category_id"
-                     select="com.media.website.mapper.CategoryMapper.findById"/>
-        <association property="album" column="album_id"
-                     select="com.media.website.mapper.AlbumMapper.findById"/>
-        <collection property="tags" column="id"
-                    select="com.media.website.mapper.TagMapper.findByMediaId"/>
+        <association property="category" columnPrefix="cat_" javaType="Category">
+            <id property="id" column="id"/>
+            <result property="name" column="name"/>
+            <result property="description" column="description"/>
+            <result property="createdAt" column="created_at"/>
+            <result property="updatedAt" column="updated_at"/>
+        </association>
+        <association property="album" columnPrefix="alb_" javaType="Album">
+            <id property="id" column="id"/>
+            <result property="name" column="name"/>
+            <result property="description" column="description"/>
+            <result property="coverImage" column="cover_image"/>
+            <result property="mediaCount" column="media_count"/>
+            <result property="userId" column="user_id"/>
+            <result property="createdAt" column="created_at"/>
+            <result property="updatedAt" column="updated_at"/>
+        </association>
+        <collection property="tags" columnPrefix="tag_" ofType="Tag">
+            <id property="id" column="id"/>
+            <result property="name" column="name"/>
+            <result property="createdAt" column="created_at"/>
+            <result property="updatedAt" column="updated_at"/>
+        </collection>
     </resultMap>
 
-    <sql id="mediaColumns">
-        id, filename, original_filename, file_path, file_size, file_type, media_type,
-        title, description, category_id, album_id, user_id, cover_image, view_count,
-        is_favorite, is_deleted, deleted_at, created_at, updated_at
+    <sql id="mediaSelect">
+        SELECT m.id, m.filename, m.original_filename, m.file_path, m.file_size, m.file_type, m.media_type,
+               m.title, m.description, m.user_id, m.cover_image, m.view_count,
+               m.is_favorite, m.is_deleted, m.deleted_at, m.created_at, m.updated_at,
+               c.id AS cat_id, c.name AS cat_name, c.description AS cat_description,
+               c.created_at AS cat_created_at, c.updated_at AS cat_updated_at,
+               a.id AS alb_id, a.name AS alb_name, a.description AS alb_description,
+               a.cover_image AS alb_cover_image, a.media_count AS alb_media_count, a.user_id AS alb_user_id,
+               a.created_at AS alb_created_at, a.updated_at AS alb_updated_at,
+               t.id AS tag_id, t.name AS tag_name, t.created_at AS tag_created_at, t.updated_at AS tag_updated_at
+        FROM media m
+        LEFT JOIN category c ON c.id = m.category_id
+        LEFT JOIN albums a ON a.id = m.album_id
+        LEFT JOIN media_tag mt ON mt.media_id = m.id
+        LEFT JOIN tag t ON t.id = mt.tag_id
     </sql>
 
     <select id="findById" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
-        FROM media
-        WHERE id = #{id}
+        <include refid="mediaSelect"/>
+        WHERE m.id = #{id}
     </select>
 
     <select id="findByUserIdAndIsDeleted" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
-        FROM media
-        WHERE user_id = #{userId} AND is_deleted = #{isDeleted}
-        ORDER BY id
+        <include refid="mediaSelect"/>
+        WHERE m.user_id = #{userId} AND m.is_deleted = #{isDeleted}
+        ORDER BY m.id
     </select>
 
     <select id="findByUserIdAndIsFavorite" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
-        FROM media
-        WHERE user_id = #{userId} AND is_favorite = #{isFavorite}
-        ORDER BY id
+        <include refid="mediaSelect"/>
+        WHERE m.user_id = #{userId} AND m.is_favorite = #{isFavorite}
+        ORDER BY m.id
     </select>
 
     <select id="findByAlbumIdAndUserId" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
-        FROM media
-        WHERE album_id = #{albumId} AND user_id = #{userId} AND is_deleted = FALSE
-        ORDER BY id
+        <include refid="mediaSelect"/>
+        WHERE m.album_id = #{albumId} AND m.user_id = #{userId} AND m.is_deleted = FALSE
+        ORDER BY m.id
     </select>
 
     <select id="findByUserIdAndCategoryId" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
-        FROM media
-        WHERE user_id = #{userId} AND category_id = #{categoryId} AND is_deleted = FALSE
-        ORDER BY id
+        <include refid="mediaSelect"/>
+        WHERE m.user_id = #{userId} AND m.category_id = #{categoryId} AND m.is_deleted = FALSE
+        ORDER BY m.id
+    </select>
+
+    <select id="findByUserIdAndTagId" resultMap="mediaResultMap">
+        <include refid="mediaSelect"/>
+        WHERE m.user_id = #{userId} AND m.is_deleted = FALSE
+          AND EXISTS (SELECT 1 FROM media_tag mt2 WHERE mt2.media_id = m.id AND mt2.tag_id = #{tagId})
+        ORDER BY m.id
     </select>
 
     <select id="findByUserIdAndMediaTypeAndIsDeleted" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>
-        FROM media
-        WHERE user_id = #{userId} AND media_type = #{mediaType} AND is_deleted = #{isDeleted}
-        ORDER BY id
+        <include refid="mediaSelect"/>
+        WHERE m.user_id = #{userId} AND m.media_type = #{mediaType} AND m.is_deleted = #{isDeleted}
+        ORDER BY m.id
     </select>
 
     <select id="searchByKeyword" resultMap="mediaResultMap">
-        SELECT <include refid="mediaColumns"/>,
+        <include refid="mediaSelect"/>,
         CASE
-            WHEN title = #{keyword} THEN 0
-            WHEN original_filename = #{keyword} THEN 1
-            WHEN title LIKE CONCAT(#{keyword}, '%') THEN 2
-            WHEN original_filename LIKE CONCAT(#{keyword}, '%') THEN 3
-            WHEN filename LIKE CONCAT(#{keyword}, '%') THEN 4
-            WHEN title LIKE CONCAT('%', #{keyword}, '%') THEN 5
-            WHEN original_filename LIKE CONCAT('%', #{keyword}, '%') THEN 6
-            WHEN filename LIKE CONCAT('%', #{keyword}, '%') THEN 7
-            WHEN description LIKE CONCAT('%', #{keyword}, '%') THEN 8
+            WHEN m.title = #{keyword} THEN 0
+            WHEN m.original_filename = #{keyword} THEN 1
+            WHEN m.title LIKE CONCAT(#{keyword}, '%') THEN 2
+            WHEN m.original_filename LIKE CONCAT(#{keyword}, '%') THEN 3
+            WHEN m.filename LIKE CONCAT(#{keyword}, '%') THEN 4
+            WHEN m.title LIKE CONCAT('%', #{keyword}, '%') THEN 5
+            WHEN m.original_filename LIKE CONCAT('%', #{keyword}, '%') THEN 6
+            WHEN m.filename LIKE CONCAT('%', #{keyword}, '%') THEN 7
+            WHEN m.description LIKE CONCAT('%', #{keyword}, '%') THEN 8
             ELSE 9
         END AS relevance
-        FROM media
-        WHERE user_id = #{userId} AND is_deleted = FALSE
-          AND (title LIKE CONCAT('%', #{keyword}, '%')
-               OR original_filename LIKE CONCAT('%', #{keyword}, '%')
-               OR filename LIKE CONCAT('%', #{keyword}, '%')
-               OR description LIKE CONCAT('%', #{keyword}, '%'))
-        ORDER BY relevance, id
+        WHERE m.user_id = #{userId} AND m.is_deleted = FALSE
+          AND (m.title LIKE CONCAT('%', #{keyword}, '%')
+               OR m.original_filename LIKE CONCAT('%', #{keyword}, '%')
+               OR m.filename LIKE CONCAT('%', #{keyword}, '%')
+               OR m.description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY relevance, m.id
+    </select>
+
+    <sql id="pageConditions">
+        m.user_id = #{userId}
+        AND m.is_deleted = #{deleted}
+        <if test="type != null"> AND m.media_type = #{type}</if>
+        <if test="categoryId != null"> AND m.category_id = #{categoryId}</if>
+        <if test="albumId != null"> AND m.album_id = #{albumId}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (m.title LIKE CONCAT('%', #{keyword}, '%')
+                 OR m.original_filename LIKE CONCAT('%', #{keyword}, '%')
+                 OR m.filename LIKE CONCAT('%', #{keyword}, '%')
+                 OR m.description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="favorite != null"> AND m.is_favorite = #{favorite}</if>
+        <if test="tagId != null">
+            AND EXISTS (SELECT 1 FROM media_tag mt3 WHERE mt3.media_id = m.id AND mt3.tag_id = #{tagId})
+        </if>
+    </sql>
+
+    <select id="findPage" resultMap="mediaResultMap">
+        <include refid="mediaSelect"/>
+        INNER JOIN (
+            SELECT id FROM media m
+            WHERE <include refid="pageConditions"/>
+            ORDER BY id
+            LIMIT #{offset}, #{size}
+        ) AS page_ids ON page_ids.id = m.id
+        ORDER BY m.id
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM media m
+        WHERE <include refid="pageConditions"/>
     </select>
 
     <select id="getTotalFileSizeByUserId" resultType="java.lang.Long">
@@ -141,5 +204,11 @@
     <delete id="deleteById">
         DELETE FROM media WHERE id = #{id}
     </delete>
+
+    <update id="incrementViewCount">
+        UPDATE media
+        SET view_count = COALESCE(view_count, 0) + 1, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
 
 </mapper>

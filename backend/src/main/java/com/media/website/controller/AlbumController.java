@@ -6,6 +6,7 @@ import com.media.website.entity.Album;
 import com.media.website.service.AlbumService;
 import com.media.website.util.AuthUtils;
 import com.media.website.vo.AlbumVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +46,7 @@ public class AlbumController {
     }
 
     @PostMapping
-    public ResponseEntity<AlbumVO> createAlbum(@RequestBody AlbumCreateRequestDto request,
+    public ResponseEntity<AlbumVO> createAlbum(@Valid @RequestBody AlbumCreateRequestDto request,
                                                @RequestHeader("Authorization") String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
         if (userId == null) {
@@ -60,7 +61,7 @@ public class AlbumController {
 
     @PutMapping("/{id}")
     public ResponseEntity<AlbumVO> updateAlbum(@PathVariable Long id,
-                                               @RequestBody AlbumUpdateRequestDto request,
+                                               @Valid @RequestBody AlbumUpdateRequestDto request,
                                                @RequestHeader("Authorization") String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
         if (userId == null) {

@@ -23,4 +23,25 @@
         ORDER BY t.id
     </select>
 
+    <select id="findByName" resultType="Tag">
+        SELECT id, name, created_at, updated_at
+        FROM tag
+        WHERE name = #{name}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="Tag" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tag (name, created_at, updated_at)
+        VALUES (#{name}, NOW(), NOW())
+    </insert>
+
+    <insert id="insertMediaTag">
+        INSERT IGNORE INTO media_tag (media_id, tag_id)
+        VALUES (#{mediaId}, #{tagId})
+    </insert>
+
+    <delete id="deleteMediaTags">
+        DELETE FROM media_tag WHERE media_id = #{mediaId}
+    </delete>
+
 </mapper>

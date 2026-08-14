@@ -10,6 +10,7 @@
           v-if="media && media.mediaType === 'image'"
           :src="getMediaUrl(media.filePath)"
           :alt="media.title"
+          loading="lazy"
           class="image-preview"
           @click="showLightbox = true"
           style="cursor: zoom-in;"
@@ -51,6 +52,47 @@
         <div class="info-description">
           <h3>描述</h3>
           <p>{{ media.description || '无描述' }}</p>
+        </div>
+
+        <div class="info-tags">
+          <h3>标签</h3>
+          <div class="tags-display">
+            <el-tag
+              v-for="tag in media.tags || []"
+              :key="tag.id"
+              closable
+              @close="removeTag(tag.id)"
+            >
+              {{ tag.name }}
+            </el-tag>
+            <span v-if="!media.tags || media.tags.length === 0" class="no-tags">暂无标签</span>
+          </div>
+          <div class="tag-edit">
+            <el-select
+              v-model="newTagIds"
+              multiple
+              collapse-tags
+              placeholder="选择已有标签"
+              size="small"
+              class="tag-select"
+            >
+              <el-option
+                v-for="tag in allTags"
+                :key="tag.id"
+                :label="tag.name"
+                :value="tag.id"
+              />
+            </el-select>
+            <el-button size="small" type="primary" @click="saveTags">保存</el-button>
+            <el-input
+              v-model="newTagName"
+              placeholder="新标签名"
+              size="small"
+              class="tag-name-input"
+              @keyup.enter="createTag"
+            />
+            <el-button size="small" @click="createTag">新建</el-button>
+          </div>
         </div>
 
         <div class="comments-section">
@@ -135,6 +177,9 @@ const lightboxImg = ref(null)
 const comments = ref([])
 const newComment = ref('')
 const currentUserId = ref(null)
+const allTags = ref([])
+const newTagIds = ref([])
+const newTagName = ref('')
 
 const currentMediaIndex = ref(0)
 const allMediaList = ref([])
@@ -282,6 +327,47 @@ const fetchComments = async () => {
   }
 }
 
+const fetchTags = async () => {
+  try {
+    const response = await api.get('/tags')
+    allTags.value = response.data
+  } catch (error) {
+    console.error('获取标签失败', error)
+  }
+}
+
+const saveTags = async () => {
+  try {
+    await api.put(`/media/${media.value.id}/tags`, { tagIds: newTagIds.value })
+    ElMessage.success('标签已更新')
+    newTagIds.value = []
+    fetchMediaDetail()
+  } catch (error) {
+    ElMessage.error('保存标签失败')
+  }
+}
+
+const removeTag = async (tagId) => {
+  newTagIds.value = (media.value.tags || []).filter(t => t.id !== tagId).map(t => t.id)
+  saveTags()
+}
+
+const createTag = async () => {
+  const name = newTagName.value.trim()
+  if (!name) return
+  try {
+    const response = await api.post('/tags', { name })
+    newTagName.value = ''
+    fetchTags()
+    if (media.value) {
+      newTagIds.value = [...new Set([...newTagIds.value, response.data.id])]
+    }
+    ElMessage.success('标签已创建')
+  } catch (error) {
+    ElMessage.error('创建标签失败')
+  }
+}
+
 const submitComment = async () => {
   if (!newComment.value.trim()) return
   try {
@@ -311,6 +397,7 @@ onMounted(() => {
   fetchMediaDetail()
   fetchComments()
   fetchAllMedia()
+  fetchTags()
   const userStr = localStorage.getItem('user')
   if (userStr) {
     const user = JSON.parse(userStr)
@@ -396,6 +483,43 @@ onMounted(() => {
       p {
         color: #666;
         line-height: 1.6;
+      }
+    }
+
+    .info-tags {
+      margin-bottom: 1.5rem;
+
+      h3 {
+        font-size: 1rem;
+        color: #333;
+        margin: 0 0 0.5rem 0;
+      }
+
+      .tags-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+
+        .no-tags {
+          color: #999;
+          font-size: 0.9rem;
+        }
+      }
+
+      .tag-edit {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+
+        .tag-select {
+          width: 180px;
+        }
+
+        .tag-name-input {
+          width: 130px;
+        }
       }
     }
 

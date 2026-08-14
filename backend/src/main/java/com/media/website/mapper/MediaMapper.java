@@ -20,11 +20,24 @@ public interface MediaMapper {
 
     List<Media> findByUserIdAndCategoryId(@Param("userId") Long userId, @Param("categoryId") Long categoryId);
 
+    List<Media> findByUserIdAndTagId(@Param("userId") Long userId, @Param("tagId") Long tagId);
+
     List<Media> findByUserIdAndMediaTypeAndIsDeleted(@Param("userId") Long userId,
                                                      @Param("mediaType") Media.MediaType mediaType,
                                                      @Param("isDeleted") boolean isDeleted);
 
     List<Media> searchByKeyword(@Param("userId") Long userId, @Param("keyword") String keyword);
+
+    List<Media> findPage(@Param("userId") Long userId, @Param("deleted") boolean deleted,
+                         @Param("type") Media.MediaType type, @Param("categoryId") Long categoryId,
+                         @Param("albumId") Long albumId, @Param("keyword") String keyword,
+                         @Param("favorite") Boolean favorite, @Param("tagId") Long tagId,
+                         @Param("offset") int offset, @Param("size") int size);
+
+    long countPage(@Param("userId") Long userId, @Param("deleted") boolean deleted,
+                   @Param("type") Media.MediaType type, @Param("categoryId") Long categoryId,
+                   @Param("albumId") Long albumId, @Param("keyword") String keyword,
+                   @Param("favorite") Boolean favorite, @Param("tagId") Long tagId);
 
     Long getTotalFileSizeByUserId(@Param("userId") Long userId);
 
@@ -40,4 +53,6 @@ public interface MediaMapper {
     int updateAlbum(@Param("id") Long id, @Param("albumId") Long albumId);
 
     int deleteById(@Param("id") Long id);
+
+    int incrementViewCount(@Param("id") Long id);
 }

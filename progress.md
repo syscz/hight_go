@@ -135,6 +135,22 @@
   - 后端：pom.xml、application.yml、AuthService、UserMapper(+xml)、CommentMapper(+xml)、CommentService、CommentController、MediaService、MediaController
   - 服务器：media-website.service、/usr/local/bin/backup-media.sh、crontab、nginx media.conf、/data/media/uploads
 
+### 补充：2026-08-14 P2 性能 + P3 功能改造上线
+- P2 性能：
+  - N+1 优化：MediaMapper resultMap 改 JOIN 嵌套结果（columnPrefix cat_/alb_/tag_），媒体列表一次查询
+  - 图片懒加载：Home/Favorites/Search/Trash/Timeline/MediaDetail 的 img 加 loading="lazy"
+  - 列表分页：/api/media?page=&size= 返回 {list,total,page,size}（无参保持数组兼容）；Home 加 el-pagination + 标签筛选下拉；分页 SQL 用 JOIN 派生表规避 MySQL LIMIT IN 限制
+  - nginx gzip：配置 gzip_static + 预压缩 .gz（844KB→266KB），但阿里云 nginx 1.20 动态压缩未生效（待办：CDN）
+- P3 功能：
+  - 浏览量：详情接口 view_count 自增（incrementViewCount）
+  - 标签系统：TagService.createTag、MediaService.setMediaTags（整体替换）、/api/media?tagId= 筛选、PUT /api/media/{id}/tags、POST /api/tags；前端 MediaDetail 标签展示/保存/新建，Home 标签下拉
+  - 统一异常：GlobalExceptionHandler（IllegalArgument→400、校验→400、405、兜底 500 带日志）；DTO 加 @NotBlank/@NotNull/@NotEmpty + Controller @Valid
+- 验证（线上）：分页 total 22、标签创建/设置/筛选/展示、浏览量自增、校验 400、405 处理、前端新版本、gzip .gz 直连 266KB
+- 创建/修改的文件：
+  - 后端：MediaMapper.xml（JOIN+分页）、MediaMapper、TagMapper(+xml)、TagService、MediaService、MediaController、TagController、GlobalExceptionHandler、7 个 DTO 校验注解、PageResultVO/TagSetRequestDto/TagCreateRequestDto
+  - 前端：Home.vue（分页+标签筛选+懒加载）、MediaDetail.vue（标签+懒加载）、Favorites/Search/Trash/Timeline（懒加载）
+  - 服务器：nginx media.conf（gzip_static）、assets/*.gz
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

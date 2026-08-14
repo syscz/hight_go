@@ -18,7 +18,7 @@
             class="media-item"
             @click="goToDetail(item.id)"
           >
-            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" />
+            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" loading="lazy" />
             <video v-else :src="getCoverUrl(item)" />
             <div class="media-overlay">
               <span class="media-title">{{ item.title || item.filename }}</span>

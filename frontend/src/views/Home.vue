@@ -29,6 +29,21 @@
       </div>
       <div class="toolbar-right">
         <div class="search-box">
+          <el-select
+            v-model="selectedTagId"
+            placeholder="标签筛选"
+            clearable
+            size="large"
+            class="tag-filter"
+            @change="handleTagChange"
+          >
+            <el-option
+              v-for="tag in tags"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.id"
+            />
+          </el-select>
           <el-input
             v-model="searchKeyword"
             placeholder="搜索标题/描述..."
@@ -104,7 +119,7 @@
               @change="toggleSelect(item.id)"
               class="media-checkbox"
             />
-            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" />
+            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" loading="lazy" />
             <video v-else :src="getCoverUrl(item)" />
             <div class="media-overlay">
               <span class="media-title">{{ item.title || item.filename }}</span>
@@ -121,6 +136,16 @@
         <div v-if="!loading && mediaList.length === 0" class="empty-state">
           <div class="empty-icon">🔍</div>
           <p>没有找到内容</p>
+        </div>
+        <div v-if="viewMode !== 'albums' && totalMedia > pageSize" class="pagination">
+          <el-pagination
+            background
+            layout="prev, pager, next"
+            :total="totalMedia"
+            :page-size="pageSize"
+            :current-page="currentPage"
+            @current-change="handlePageChange"
+          />
         </div>
       </div>
     </div>
@@ -185,10 +210,15 @@ const loading = computed(() => mediaStore.loading)
 const viewMode = ref('albums')
 const searchKeyword = ref('')
 const mediaList = ref([])
+const currentPage = ref(1)
+const pageSize = ref(24)
+const totalMedia = ref(0)
+const selectedTagId = ref(null)
 const stats = ref(null)
 const selectedMedia = ref([])
 const moveDialogVisible = ref(false)
 const targetAlbumId = ref(null)
+const tags = computed(() => mediaStore.tags)
 
 const createAlbumDialogVisible = ref(false)
 const newAlbumName = ref('')
@@ -254,19 +284,38 @@ const fetchStats = async () => {
 
 const fetchMediaList = async () => {
   try {
-    const params = {}
+    const params = { page: currentPage.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value
     if (viewMode.value === 'images') params.type = 'image'
     if (viewMode.value === 'videos') params.type = 'video'
-    const response = await api.get('/media', params)
-    mediaList.value = response.data
+    if (selectedTagId.value) params.tagId = selectedTagId.value
+    const response = await api.get('/media', { params })
+    const data = response.data
+    if (Array.isArray(data)) {
+      mediaList.value = data
+      totalMedia.value = data.length
+    } else {
+      mediaList.value = data.list || []
+      totalMedia.value = data.total || 0
+    }
   } catch (error) {
     ElMessage.error('获取媒体列表失败')
   }
 }
 
 const handleSearch = () => {
+  currentPage.value = 1
   viewMode.value = 'all'
+}
+
+const handleTagChange = () => {
+  currentPage.value = 1
+  fetchMediaList()
+}
+
+const handlePageChange = (p) => {
+  currentPage.value = p
+  fetchMediaList()
 }
 
 const getCoverUrl = (item) => {
@@ -287,6 +336,7 @@ const goToDetail = (id) => {
 }
 
 watch(viewMode, (mode) => {
+  currentPage.value = 1
   if (mode !== 'albums') {
     fetchMediaList()
   }
@@ -371,6 +421,7 @@ onMounted(() => {
   if (q.keyword) searchKeyword.value = q.keyword
   fetchAlbums()
   fetchStats()
+  mediaStore.fetchTags()
   if (viewMode.value !== 'albums') {
     fetchMediaList()
   }
@@ -531,6 +582,12 @@ onMounted(() => {
   }
 }
 
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
 .toolbar {
   position: relative;
   z-index: 1;
@@ -592,6 +649,10 @@ onMounted(() => {
       display: flex;
       gap: 0.5rem;
       align-items: center;
+
+      .tag-filter {
+        width: 140px;
+      }
 
       .search-input {
         width: 240px;
@@ -811,6 +872,10 @@ onMounted(() => {
       .search-box {
         flex-direction: column;
         width: 100%;
+
+        .tag-filter {
+          width: 100%;
+        }
 
         .search-input {
           width: 100%;

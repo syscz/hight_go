@@ -69,6 +69,29 @@
 - [x] 日志轮转：systemd journal 托管（journald 自动限额轮转），废弃 /tmp/backend.log
 - **状态：** complete
 
+## 阶段 8：P2 性能优化（用户确认）
+- [x] N+1 查询优化：Media 的 category/album/tags 改为 JOIN 嵌套结果（resultMap columnPrefix，一次查询）
+- [x] 图片懒加载（6 个页面 img 加 loading="lazy"）；nginx gzip：已配 gzip_static + 预压缩 .gz 文件，但该 nginx 版本动态压缩未生效（见备注，建议 CDN）
+- [x] 列表分页：后端 /api/media 支持 page/size（无参返回全量兼容），前端 Home 加 el-pagination + 标签筛选
+- **状态：** complete
+
+## 阶段 9：P3 功能完善（用户确认）
+- [x] 浏览量实现：详情接口 view_count 自增（实测 1→2→3）
+- [x] 标签系统：后端创建标签/设置媒体标签/按标签筛选；前端 MediaDetail 标签展示编辑 + Home 标签下拉筛选
+- [x] 统一异常处理：@RestControllerAdvice（400/405/500）+ DTO @Valid 参数校验（实测空字段 400、GET 调 POST 接口 405）
+- **状态：** complete
+
+## 阶段 10：P2+P3 验证部署
+- [x] 后端编译 + 本地接口验证（分页/标签/浏览量/校验/405）
+- [x] 前端构建验证（npm run build）
+- [x] 线上部署（jar + 前端 + nginx gzip_static）与全量验证
+- **状态：** complete
+
+## 备注（gzip）
+- 阿里云 nginx 1.20.1（alinux3 RPM）编译参数仅含 gzip_static 无动态 gzip 模块；`gzip on` 指令被接受但过滤器未运行（响应无 Vary/Content-Encoding）
+- 已生成并上传 27 个预压缩 .gz（844KB → 266KB），配置 gzip_static on，但该版本未接管（.gz 直连正常）
+- 建议后续：接入 Cloudflare 等 CDN 自动压缩，或换标准 nginx
+
 ## 已做决策
 | 决策 | 理由 |
 |------|------|

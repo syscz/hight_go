@@ -2,6 +2,8 @@ package com.media.website.service;
 
 import com.media.website.entity.Media;
 import com.media.website.mapper.MediaMapper;
+import com.media.website.mapper.TagMapper;
+import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,9 +24,10 @@ public class MediaService {
     private final MediaMapper mediaMapper;
     private final AlbumService albumService;
     private final FileUploadService fileUploadService;
+    private final TagMapper tagMapper;
 
     public List<Media> getMediaList(Long userId, Media.MediaType type, Long categoryId, Long albumId,
-                                    String keyword, Boolean favorite, Boolean deleted) {
+                                    String keyword, Boolean favorite, Boolean deleted, Long tagId) {
         if (Boolean.TRUE.equals(deleted)) {
             return mediaMapper.findByUserIdAndIsDeleted(userId, true);
         }
@@ -43,7 +46,24 @@ public class MediaService {
         if (categoryId != null) {
             return mediaMapper.findByUserIdAndCategoryId(userId, categoryId);
         }
+        if (tagId != null) {
+            return mediaMapper.findByUserIdAndTagId(userId, tagId);
+        }
         return mediaMapper.findByUserIdAndIsDeleted(userId, false);
+    }
+
+    public PageResultVO<Media> getMediaPage(Long userId, int page, int size, Media.MediaType type,
+                                            Long categoryId, Long albumId, String keyword,
+                                            Boolean favorite, Boolean deleted, Long tagId) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 20;
+        int offset = (page - 1) * size;
+        boolean del = Boolean.TRUE.equals(deleted);
+        List<Media> list = mediaMapper.findPage(userId, del, type, categoryId, albumId,
+                keyword, favorite, tagId, offset, size);
+        long total = mediaMapper.countPage(userId, del, type, categoryId, albumId,
+                keyword, favorite, tagId);
+        return PageResultVO.of(list, total, page, size);
     }
 
     public Map<String, List<Media>> getTimeline(Long userId) {
@@ -77,6 +97,22 @@ public class MediaService {
     public Optional<Media> getMediaById(Long userId, Long id) {
         return Optional.ofNullable(mediaMapper.findById(id))
                 .filter(m -> userId.equals(m.getUserId()));
+    }
+
+    public void incrementViewCount(Long id) {
+        mediaMapper.incrementViewCount(id);
+    }
+
+    public void setMediaTags(Long userId, Long mediaId, java.util.List<Long> tagIds) {
+        getMediaById(userId, mediaId).orElseThrow(() -> new IllegalArgumentException("媒体不存在"));
+        tagMapper.deleteMediaTags(mediaId);
+        if (tagIds != null) {
+            for (Long tagId : tagIds) {
+                if (tagId != null) {
+                    tagMapper.insertMediaTag(mediaId, tagId);
+                }
+            }
+        }
     }
 
     public Media uploadMedia(Long userId, MultipartFile file, String title, String description,

@@ -49,7 +49,7 @@
             @click="viewMedia(item.id)"
           >
             <div class="result-thumb">
-              <img v-if="item.mediaType === 'image'" :src="getMediaUrl(item.filePath)" :alt="item.title" />
+              <img v-if="item.mediaType === 'image'" :src="getMediaUrl(item.filePath)" :alt="item.title" loading="lazy" />
               <div v-else class="video-icon">🎬</div>
             </div>
             <div class="result-info">

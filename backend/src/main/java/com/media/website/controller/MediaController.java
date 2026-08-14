@@ -2,13 +2,16 @@ package com.media.website.controller;
 
 import com.media.website.dto.BatchDeleteRequestDto;
 import com.media.website.dto.BatchMoveRequestDto;
+import com.media.website.dto.TagSetRequestDto;
 import com.media.website.entity.Media;
 import com.media.website.service.MediaService;
 import com.media.website.util.AuthUtils;
 import com.media.website.vo.ApiErrorVO;
 import com.media.website.vo.ApiMessageVO;
 import com.media.website.vo.MediaVO;
+import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +31,16 @@ public class MediaController {
     private final AuthUtils authUtils;
 
     @GetMapping
-    public ResponseEntity<List<MediaVO>> getMediaList(
+    public ResponseEntity<?> getMediaList(
             @RequestParam(required = false) Media.MediaType type,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long albumId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Boolean favorite,
             @RequestParam(required = false) Boolean deleted,
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
             @RequestHeader("Authorization") String authHeader) {
 
         Long userId = authUtils.getUserId(authHeader);
@@ -42,9 +48,35 @@ public class MediaController {
             return ResponseEntity.status(401).build();
         }
 
+        if (page != null) {
+            int pageSize = size != null ? size : 24;
+            PageResultVO<Media> result = mediaService.getMediaPage(
+                    userId, page, pageSize, type, categoryId, albumId, keyword, favorite, deleted, tagId);
+            PageResultVO<MediaVO> vo = PageResultVO.of(
+                    result.getList().stream().map(MediaVO::from).collect(Collectors.toList()),
+                    result.getTotal(), result.getPage(), result.getSize());
+            return ResponseEntity.ok(vo);
+        }
+
         List<Media> mediaList = mediaService.getMediaList(
-                userId, type, categoryId, albumId, keyword, favorite, deleted);
+                userId, type, categoryId, albumId, keyword, favorite, deleted, tagId);
         return ResponseEntity.ok(mediaList.stream().map(MediaVO::from).collect(Collectors.toList()));
+    }
+
+    @PutMapping("/{id}/tags")
+    public ResponseEntity<?> setMediaTags(@PathVariable Long id,
+                                          @Valid @RequestBody TagSetRequestDto request,
+                                          @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            mediaService.setMediaTags(userId, id, request.getTagIds());
+            return ResponseEntity.ok(new ApiMessageVO("标签已更新"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
+        }
     }
 
     @GetMapping("/timeline")
@@ -78,7 +110,12 @@ public class MediaController {
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
-        return mediaService.getMediaById(userId, id)
+        var media = mediaService.getMediaById(userId, id);
+        media.ifPresent(m -> {
+            mediaService.incrementViewCount(id);
+            m.setViewCount((m.getViewCount() == null ? 0 : m.getViewCount()) + 1);
+        });
+        return media
                 .map(m -> ResponseEntity.ok(MediaVO.from(m)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -119,7 +156,7 @@ public class MediaController {
     }
 
     @PostMapping("/batch/move")
-    public ResponseEntity<?> batchMove(@RequestBody BatchMoveRequestDto request,
+    public ResponseEntity<?> batchMove(@Valid @RequestBody BatchMoveRequestDto request,
                                        @RequestHeader("Authorization") String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
         if (userId == null) {
@@ -137,7 +174,7 @@ public class MediaController {
     }
 
     @PostMapping("/batch/delete")
-    public ResponseEntity<?> batchSoftDelete(@RequestBody BatchDeleteRequestDto request,
+    public ResponseEntity<?> batchSoftDelete(@Valid @RequestBody BatchDeleteRequestDto request,
                                              @RequestHeader("Authorization") String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
         if (userId == null) {
@@ -151,7 +188,7 @@ public class MediaController {
     }
 
     @PostMapping("/batch/restore")
-    public ResponseEntity<?> batchRestore(@RequestBody BatchDeleteRequestDto request,
+    public ResponseEntity<?> batchRestore(@Valid @RequestBody BatchDeleteRequestDto request,
                                           @RequestHeader("Authorization") String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
         if (userId == null) {

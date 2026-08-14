@@ -6,6 +6,7 @@ import com.media.website.service.CommentService;
 import com.media.website.util.AuthUtils;
 import com.media.website.vo.ApiErrorVO;
 import com.media.website.vo.CommentVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addComment(@RequestBody CommentAddRequestDto request,
+    public ResponseEntity<?> addComment(@Valid @RequestBody CommentAddRequestDto request,
                                         @RequestHeader("Authorization") String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
         if (userId == null) {

@@ -4,6 +4,7 @@ import com.media.website.dto.LoginRequestDto;
 import com.media.website.dto.RegisterRequestDto;
 import com.media.website.service.AuthService;
 import com.media.website.vo.ApiErrorVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequestDto request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto request) {
         try {
             return ResponseEntity.ok(authService.register(request));
         } catch (IllegalArgumentException e) {
@@ -25,7 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
         try {
             return ResponseEntity.ok(authService.login(request));
         } catch (IllegalArgumentException e) {

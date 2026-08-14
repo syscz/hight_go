@@ -118,6 +118,15 @@
 - 定时备份：crontab 每日 03:00 备份数据库 + uploads，保留 14 天
 - 服务器备份清单（20260814）：/var/www/backup/ 含 jar×2、前端 tar、数据库 sql×2、uploads tar×2、nginx media.conf、assets
 
+## P2 + P3 已落地（2026-08-14）
+- N+1 优化：Media 查询改 JOIN 嵌套结果，一次查询带出 category/album/tags
+- 分页：/api/media?page&size → {list,total,page,size}（无参兼容数组）；Home 分页 + 标签筛选
+- 图片懒加载：全部列表页 img loading="lazy"
+- 浏览量自增：详情访问 +1
+- 标签系统：创建/设置/筛选接口 + MediaDetail 管理 UI + Home 标签下拉
+- 统一异常 + 校验：@RestControllerAdvice（400/405/500）+ @Valid DTO
+- gzip：预压缩 .gz 已部署（844KB→266KB），阿里云 nginx 1.20 动态压缩不生效 → 待办：CDN 自动压缩或换 nginx
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

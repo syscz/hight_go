@@ -16,4 +16,15 @@ public class TagService {
     public List<Tag> getTagList() {
         return tagMapper.findAll();
     }
+
+    public Tag createTag(String name) {
+        Tag tag = tagMapper.findByName(name);
+        if (tag != null) {
+            return tag;
+        }
+        tag = new Tag();
+        tag.setName(name);
+        tagMapper.insert(tag);
+        return tag;
+    }
 }
