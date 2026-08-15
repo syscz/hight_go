@@ -267,4 +267,18 @@ public class MediaService {
             }
         }
     }
+
+    public void setPublic(Long userId, Long mediaId, boolean isPublic) {
+        getMediaById(userId, mediaId).orElseThrow(() -> new IllegalArgumentException("媒体不存在"));
+        mediaMapper.updateIsPublic(mediaId, isPublic);
+    }
+
+    public PageResultVO<Media> getPublicMedia(int page, int size) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 24;
+        int offset = (page - 1) * size;
+        List<Media> list = mediaMapper.findPublic(offset, size);
+        long total = mediaMapper.countPublic();
+        return PageResultVO.of(list, total, page, size);
+    }
 }

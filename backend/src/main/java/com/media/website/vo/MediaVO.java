@@ -26,6 +26,7 @@ public class MediaVO {
     private Integer viewCount;
     private Boolean isFavorite;
     private Boolean isDeleted;
+    private Boolean isPublic;
     private LocalDateTime deletedAt;
     private List<TagVO> tags;
     private LocalDateTime createdAt;
@@ -53,6 +54,7 @@ public class MediaVO {
         vo.setViewCount(media.getViewCount());
         vo.setIsFavorite(media.getIsFavorite());
         vo.setIsDeleted(media.getIsDeleted());
+        vo.setIsPublic(media.getIsPublic());
         vo.setDeletedAt(media.getDeletedAt());
         if (media.getTags() != null) {
             vo.setTags(media.getTags().stream().map(TagVO::from).collect(Collectors.toList()));

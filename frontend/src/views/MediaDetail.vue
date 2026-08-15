@@ -45,6 +45,16 @@
           <el-button :type="media.isFavorite ? 'danger' : 'default'" @click="toggleFavorite">
             {{ media.isFavorite ? '♥ 取消收藏' : '♡ 收藏' }}
           </el-button>
+          <div class="public-toggle">
+            <span class="public-label">公开</span>
+            <el-switch
+              :model-value="!!media.isPublic"
+              @change="handlePublicChange"
+              inline-prompt
+              active-text="开"
+              inactive-text="关"
+            />
+          </div>
           <el-button type="danger" @click="handleDelete">
             <el-icon><Delete /></el-icon> 删除
           </el-button>
@@ -330,6 +340,16 @@ const toggleFavorite = async () => {
   }
 }
 
+const handlePublicChange = async (value) => {
+  try {
+    await api.put(`/media/${media.value.id}/public`, { isPublic: value })
+    media.value.isPublic = value
+    ElMessage.success(value ? '已设为公开' : '已设为私密')
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
 const fetchComments = async () => {
   try {
     const response = await api.get(`/comments/media/${route.params.id}`)
@@ -542,6 +562,19 @@ onMounted(() => {
       display: flex;
       gap: 1rem;
       margin-bottom: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+
+      .public-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .public-label {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+        }
+      }
     }
   }
 

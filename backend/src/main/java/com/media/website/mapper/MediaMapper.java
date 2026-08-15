@@ -64,4 +64,10 @@ public interface MediaMapper {
                          @Param("title") String title, @Param("description") String description);
 
     List<Media> findByIds(@Param("ids") List<Long> ids, @Param("userId") Long userId);
+
+    List<Media> findPublic(@Param("offset") int offset, @Param("size") int size);
+
+    long countPublic();
+
+    int updateIsPublic(@Param("id") Long id, @Param("isPublic") boolean isPublic);
 }

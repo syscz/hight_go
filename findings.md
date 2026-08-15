@@ -185,6 +185,11 @@
 - 移动端：顶部 mini 头 + 底部 Tab
 - 无限滚动、浮动多选栏、无统计条/大标题
 
+## 用户隔离 + 公开广场（2026-08-15，v2.2）
+- 媒体默认私密（is_public=false），仅本人可见；详情页可切换公开
+- 广场 /public：无需登录展示所有用户公开媒体（网格 + 全屏看图 + 无限滚动）
+- 权限模型：私有媒体仅 owner 可见；公开媒体任何人可见（仅列表/看图，评论编辑等仍需登录且限 owner）
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

@@ -16,6 +16,9 @@
         <router-link to="/calendar" class="side-link">
           <span class="side-icon">📅</span><span>日历</span>
         </router-link>
+        <router-link to="/public" class="side-link">
+          <span class="side-icon">🌍</span><span>公开广场</span>
+        </router-link>
         <router-link to="/search" class="side-link">
           <span class="side-icon">🔍</span><span>搜索</span>
         </router-link>
@@ -53,7 +56,7 @@
       <router-link to="/?viewMode=albums" class="mobile-link"><span>📁</span><span>相册</span></router-link>
       <router-link to="/search" class="mobile-link"><span>🔍</span><span>搜索</span></router-link>
       <router-link to="/calendar" class="mobile-link"><span>📅</span><span>日历</span></router-link>
-      <router-link to="/timeline" class="mobile-link"><span>🕐</span><span>时间线</span></router-link>
+      <router-link to="/public" class="mobile-link"><span>🌍</span><span>广场</span></router-link>
     </nav>
   </div>
 </template>

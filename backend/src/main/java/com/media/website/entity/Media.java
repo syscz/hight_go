@@ -41,6 +41,8 @@ public class Media {
 
     private Boolean isDeleted = false;
 
+    private Boolean isPublic = false;
+
     private LocalDateTime deletedAt;
 
     private List<Tag> tags;

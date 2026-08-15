@@ -59,6 +59,11 @@ const routes = [
     name: 'Calendar',
     component: () => import('../views/Calendar.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/public',
+    name: 'PublicGallery',
+    component: () => import('../views/PublicGallery.vue')
   }
 ]
 

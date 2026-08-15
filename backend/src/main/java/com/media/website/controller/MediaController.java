@@ -3,6 +3,7 @@ package com.media.website.controller;
 import com.media.website.dto.BatchDeleteRequestDto;
 import com.media.website.dto.BatchMoveRequestDto;
 import com.media.website.dto.BatchUpdateRequestDto;
+import com.media.website.dto.MediaPublicRequestDto;
 import com.media.website.dto.TagSetRequestDto;
 import com.media.website.entity.Media;
 import com.media.website.service.MediaService;
@@ -33,6 +34,34 @@ public class MediaController {
     private final MediaService mediaService;
     private final AuthUtils authUtils;
     private final FileUploadService fileUploadService;
+
+    @GetMapping("/public")
+    public ResponseEntity<PageResultVO<MediaVO>> getPublicMedia(
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "24") Integer size) {
+        PageResultVO<Media> result = mediaService.getPublicMedia(page, size);
+        PageResultVO<MediaVO> vo = PageResultVO.of(
+                result.getList().stream().map(MediaVO::from).collect(Collectors.toList()),
+                result.getTotal(), result.getPage(), result.getSize());
+        return ResponseEntity.ok(vo);
+    }
+
+    @PutMapping("/{id}/public")
+    public ResponseEntity<?> setMediaPublic(@PathVariable Long id,
+                                            @Valid @RequestBody MediaPublicRequestDto request,
+                                            @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            mediaService.setPublic(userId, id, request.getIsPublic());
+            return ResponseEntity.ok(new ApiMessageVO(
+                    request.getIsPublic() ? "已设为公开" : "已设为私密"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
+        }
+    }
 
     @PostMapping("/download")
     public void downloadMedia(@Valid @RequestBody BatchDeleteRequestDto request,
