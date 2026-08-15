@@ -281,4 +281,13 @@ public class MediaService {
         long total = mediaMapper.countPublic();
         return PageResultVO.of(list, total, page, size);
     }
+
+    public void renameTitle(Long userId,Long id, String title){
+        if (title == null || title.isBlank()){
+            throw new IllegalArgumentException("标题不能为空");
+        }
+        // 校验媒体存在且属于自己（复用现有方法）
+        getMediaById(userId, id).orElseThrow(() -> new IllegalArgumentException("媒体不存在"));
+        mediaMapper.renameTitle(id, userId,title);
+    }
 }

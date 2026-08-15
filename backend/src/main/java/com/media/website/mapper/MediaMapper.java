@@ -70,4 +70,6 @@ public interface MediaMapper {
     long countPublic();
 
     int updateIsPublic(@Param("id") Long id, @Param("isPublic") boolean isPublic);
+
+    int renameTitle(@Param("id") Long id,@Param("userId") Long userId,@Param("title") String title);
 }

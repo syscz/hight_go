@@ -260,4 +260,10 @@
         WHERE id = #{id}
     </update>
 
+    <update id="renameTitle">
+        UPDATE media
+        SET title = #{title}, updated_at = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
 </mapper>

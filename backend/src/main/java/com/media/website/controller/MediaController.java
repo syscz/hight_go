@@ -1,10 +1,6 @@
 package com.media.website.controller;
 
-import com.media.website.dto.BatchDeleteRequestDto;
-import com.media.website.dto.BatchMoveRequestDto;
-import com.media.website.dto.BatchUpdateRequestDto;
-import com.media.website.dto.MediaPublicRequestDto;
-import com.media.website.dto.TagSetRequestDto;
+import com.media.website.dto.*;
 import com.media.website.entity.Media;
 import com.media.website.service.MediaService;
 import com.media.website.util.AuthUtils;
@@ -59,6 +55,22 @@ public class MediaController {
             return ResponseEntity.ok(new ApiMessageVO(
                     request.getIsPublic() ? "已设为公开" : "已设为私密"));
         } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/rename")
+    public  ResponseEntity<?> renameMedia(@PathVariable Long id,
+                                          @Valid @RequestBody MediaRenameRequestDto request,
+                                          @RequestHeader(value = "Authorization", required = false) String authHeader){
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null){
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            mediaService.renameTitle(userId,id,request.getTitle());
+            return ResponseEntity.ok(new ApiMessageVO("重命名成功"));
+        } catch (IllegalArgumentException e){
             return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
         }
     }
