@@ -26,7 +26,12 @@
       </div>
 
       <div v-if="media" class="media-info">
-        <h2>{{ media.title || media.filename }}</h2>
+        <div class="title-row">
+          <h2>{{ media.title || media.filename }}</h2>
+          <el-button size="small" text @click="openRenameDialog">
+            <el-icon><EditPen /></el-icon> 改名
+          </el-button>
+        </div>
         <div class="info-meta">
           <span class="meta-item">
             <el-icon><Calendar /></el-icon>
@@ -169,6 +174,19 @@
         </div>
       </div>
     </div>
+
+    <el-dialog v-model="renameDialogVisible" title="重命名" width="360px" align-center>
+      <el-input
+        v-model="renameTitle"
+        placeholder="输入新标题"
+        maxlength="100"
+        @keyup.enter="handleRename"
+      />
+      <template #footer>
+        <el-button @click="renameDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleRename" :disabled="!renameTitle.trim()">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -176,7 +194,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Calendar, Document, View, Delete, Link } from '@element-plus/icons-vue'
+import { ArrowLeft, Calendar, Document, View, Delete, Link, EditPen } from '@element-plus/icons-vue'
 import api from '@/api/index'
 
 const route = useRoute()
@@ -193,6 +211,8 @@ const currentUserId = ref(null)
 const allTags = ref([])
 const newTagIds = ref([])
 const newTagName = ref('')
+const renameDialogVisible = ref(false)
+const renameTitle = ref('')
 
 const currentMediaIndex = ref(0)
 const allMediaList = ref([])
@@ -294,6 +314,24 @@ const copyLink = async () => {
     ElMessage.success('链接已复制')
   } catch (error) {
     ElMessage.error('复制失败')
+  }
+}
+
+const openRenameDialog = () => {
+  renameTitle.value = media.value?.title || media.value?.filename || ''
+  renameDialogVisible.value = true
+}
+
+const handleRename = async () => {
+  const name = renameTitle.value.trim()
+  if (!name) return
+  try {
+    await api.put(`/media/${media.value.id}/rename`, { title: name })
+    ElMessage.success('重命名成功')
+    renameDialogVisible.value = false
+    fetchMediaDetail()
+  } catch (error) {
+    ElMessage.error('重命名失败')
   }
 }
 
@@ -484,9 +522,22 @@ onMounted(() => {
   }
 
   .media-info {
-    h2 {
-      margin: 0 0 1rem 0;
-      color: var(--text-primary);
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+
+      h2 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.4rem;
+        word-break: break-all;
+      }
+
+      :deep(.el-button) {
+        color: var(--text-secondary);
+      }
     }
 
     .info-meta {

@@ -235,6 +235,12 @@
 - 修复：PublicGallery 初始请求路径错误（/public/media → /media/public），已修正
 - 部署：index-D-FmTtTt.js
 
+### 补充：2026-08-15 重命名接口（用户练手）+ 前端入口
+- 用户自己实现后端重命名接口（Mapper/Service/DTO/Controller），我检查并修复：XML id 拼写错误（renameTile）、update_at 列名错误、@RequestHeader 斜杠与必填问题、错误响应类型
+- 测试全过：正常 200 / 空标题 400 / 不存在 400 / 未登录 401；部署上线
+- 前端：MediaDetail 标题行加"改名"按钮 + 弹窗输入新标题 → PUT /media/{id}/rename → 刷新
+- 部署：index-BoedxomX.js
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

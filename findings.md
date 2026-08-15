@@ -190,6 +190,11 @@
 - 广场 /public：无需登录展示所有用户公开媒体（网格 + 全屏看图 + 无限滚动）
 - 权限模型：私有媒体仅 owner 可见；公开媒体任何人可见（仅列表/看图，评论编辑等仍需登录且限 owner）
 
+## 重命名接口（2026-08-15，用户练手）
+- 接口：PUT /api/media/{id}/rename，body {title}，返回 {message}
+- 练手踩坑记录：MyBatis 多参数需 @Param；XML id 与 Java 方法名一致；SQL 列名准确（updated_at）；@RequestHeader 默认必填（做鉴权要 required=false）
+- 前端入口：MediaDetail 标题旁"改名"按钮 + 弹窗
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/
