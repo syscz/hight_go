@@ -195,6 +195,10 @@
 - 练手踩坑记录：MyBatis 多参数需 @Param；XML id 与 Java 方法名一致；SQL 列名准确（updated_at）；@RequestHeader 默认必填（做鉴权要 required=false）
 - 前端入口：MediaDetail 标题旁"改名"按钮 + 弹窗
 
+## 相册计数 bug（2026-08-15）
+- 根因：永久删除（permanentDelete）未递减相册 media_count，导致计数残留
+- 修复：永久删除补递减；相册查询改实时子查询计数（对历史残留免疫）
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

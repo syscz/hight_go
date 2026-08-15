@@ -234,6 +234,9 @@ public class MediaService {
                 if (media.getCoverImage() != null && media.getCoverImage().contains("thumb_")) {
                     fileUploadService.deleteFile(media.getCoverImage());
                 }
+                if (media.getAlbum() != null) {
+                    albumService.decrementMediaCount(media.getAlbum().getId());
+                }
                 mediaMapper.deleteById(id);
             } catch (IOException e) {
                 throw new RuntimeException("永久删除文件失败", e);

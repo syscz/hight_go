@@ -241,6 +241,12 @@
 - 前端：MediaDetail 标题行加"改名"按钮 + 弹窗输入新标题 → PUT /media/{id}/rename → 刷新
 - 部署：index-BoedxomX.js
 
+### 补充：2026-08-15 相册计数 bug 修复
+- 现象：默认相册显示 3 个文件，实际为空
+- 根因：permanentDelete 永久删除媒体时未递减相册 media_count，历史数据残留
+- 修复：① MediaService.permanentDelete 删除前 decrementMediaCount；② AlbumMapper 查询时用子查询实时计算真实数量（computed_media_count），不再依赖可能失真的字段；③ 重算存量数据（默认相册 3→0）
+- 验证：albums 接口默认相册 0、随拍 11、hjl 11
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

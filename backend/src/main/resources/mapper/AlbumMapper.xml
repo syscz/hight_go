@@ -8,14 +8,16 @@
         <result property="name" column="name"/>
         <result property="description" column="description"/>
         <result property="coverImage" column="computed_cover_image"/>
-        <result property="mediaCount" column="media_count"/>
+        <result property="mediaCount" column="computed_media_count"/>
         <result property="userId" column="user_id"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="albumColumns">
-        a.id, a.name, a.description, a.media_count, a.user_id, a.created_at, a.updated_at,
+        a.id, a.name, a.description, a.user_id, a.created_at, a.updated_at,
+        (SELECT COUNT(*) FROM media m
+         WHERE m.album_id = a.id AND m.is_deleted = FALSE) AS computed_media_count,
         (SELECT m.cover_image FROM media m
          WHERE m.album_id = a.id AND m.is_deleted = FALSE
          ORDER BY m.id LIMIT 1) AS computed_cover_image
