@@ -57,13 +57,13 @@ public class MediaService {
 
     public PageResultVO<Media> getMediaPage(Long userId, int page, int size, Media.MediaType type,
                                             Long categoryId, Long albumId, String keyword,
-                                            Boolean favorite, Boolean deleted, Long tagId) {
+                                            Boolean favorite, Boolean deleted, Long tagId, String sort) {
         if (page < 1) page = 1;
         if (size < 1) size = 20;
         int offset = (page - 1) * size;
         boolean del = Boolean.TRUE.equals(deleted);
         List<Media> list = mediaMapper.findPage(userId, del, type, categoryId, albumId,
-                keyword, favorite, tagId, offset, size);
+                keyword, favorite, tagId, sort, offset, size);
         long total = mediaMapper.countPage(userId, del, type, categoryId, albumId,
                 keyword, favorite, tagId);
         return PageResultVO.of(list, total, page, size);

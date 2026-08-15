@@ -12,4 +12,13 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
 
+app.directive('img-fade', {
+  mounted(el) {
+    el.classList.add('img-fade')
+    const onLoad = () => el.classList.add('is-loaded')
+    if (el.complete) onLoad()
+    else el.addEventListener('load', onLoad)
+  }
+})
+
 app.mount('#app')

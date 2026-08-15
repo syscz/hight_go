@@ -43,6 +43,12 @@
               :value="tag.id"
             />
           </el-select>
+          <el-select v-model="sortBy" size="large" class="sort-select" @change="handleSortChange">
+            <el-option label="最新" value="latest" />
+            <el-option label="最旧" value="oldest" />
+            <el-option label="名称" value="name" />
+            <el-option label="大小" value="size" />
+          </el-select>
           <el-input
             v-model="searchKeyword"
             placeholder="搜索标题/描述..."
@@ -117,7 +123,7 @@
               @change="toggleSelect(item.id)"
               class="media-checkbox"
             />
-            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" loading="lazy" />
+            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" loading="lazy" v-img-fade />
             <video v-else :src="getCoverUrl(item)" />
             <div class="media-overlay">
               <span class="media-title">{{ item.title || item.filename }}</span>
@@ -243,6 +249,7 @@ const currentPage = ref(1)
 const pageSize = ref(24)
 const totalMedia = ref(0)
 const selectedTagId = ref(null)
+const sortBy = ref('latest')
 const viewLayout = ref('grid')
 const stats = ref(null)
 const animatedStats = ref(null)
@@ -354,6 +361,9 @@ const fetchMediaList = async (append = false) => {
     if (viewMode.value === 'images') params.type = 'image'
     if (viewMode.value === 'videos') params.type = 'video'
     if (selectedTagId.value) params.tagId = selectedTagId.value
+    if (sortBy.value !== 'latest') {
+      params.sort = sortBy.value === 'oldest' ? 'created_asc' : sortBy.value
+    }
     const response = await api.get('/media', { params })
     const data = response.data
     const list = Array.isArray(data) ? data : (data.list || [])
@@ -384,6 +394,11 @@ const handleSearch = () => {
 }
 
 const handleTagChange = () => {
+  currentPage.value = 1
+  fetchMediaList()
+}
+
+const handleSortChange = () => {
   currentPage.value = 1
   fetchMediaList()
 }
@@ -825,6 +840,10 @@ onBeforeUnmount(() => {
         width: 140px;
       }
 
+      .sort-select {
+        width: 100px;
+      }
+
       .view-layout-toggle {
         :deep(.el-radio-button__inner) {
           background: rgba(255, 255, 255, 0.15);
@@ -1012,6 +1031,12 @@ onBeforeUnmount(() => {
     transition: opacity 0.2s;
   }
 
+  @media (max-width: 768px) {
+    .media-checkbox {
+      opacity: 1;
+    }
+  }
+
   .media-overlay {
     position: absolute;
     bottom: 0;
@@ -1126,6 +1151,10 @@ onBeforeUnmount(() => {
         width: 100%;
 
         .tag-filter {
+          width: 100%;
+        }
+
+        .sort-select {
           width: 100%;
         }
 

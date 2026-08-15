@@ -247,6 +247,19 @@
 - 修复：① MediaService.permanentDelete 删除前 decrementMediaCount；② AlbumMapper 查询时用子查询实时计算真实数量（computed_media_count），不再依赖可能失真的字段；③ 重算存量数据（默认相册 3→0）
 - 验证：albums 接口默认相册 0、随拍 11、hjl 11
 
+### 补充：2026-08-15 前端/功能补齐 1-7
+- 后端：PUT /api/auth/password（旧密码校验 + BCrypt 更新）；/api/media 分页加 sort 排序（created_asc/name/size，默认最新）
+- 前端：
+  - 上传入口：侧边栏"上传" + 移动端底部中间凸起 "+" 按钮
+  - 改密码：侧边栏"改密码"弹窗（旧密码/新密码/确认）
+  - 图片淡入：全局 v-img-fade 指令（Home/Album/Public 网格图）
+  - 移动端选择框常显（触屏可勾选批量操作）
+  - 顶部全局搜索栏（桌面主区域，回车跳搜索页）
+  - Home 排序下拉（最新/最旧/名称/大小）
+  - 看图信息面板（MediaLightbox ℹ️ 显示标题/文件名/类型/大小/时间/浏览/标签）
+- 验证（本地）：错误旧密码 400、修改成功 200、新密码可登录、改回成功；排序 name/size 正常
+- 部署：index-D8Ukv6wn.js
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

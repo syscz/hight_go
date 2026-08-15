@@ -199,6 +199,9 @@
 - 根因：永久删除（permanentDelete）未递减相册 media_count，导致计数残留
 - 修复：永久删除补递减；相册查询改实时子查询计数（对历史残留免疫）
 
+## 补齐 1-7（2026-08-15）
+- 上传入口（侧边栏 + 移动端 + 按钮）、修改密码、图片淡入、移动端多选、顶部搜索、排序、看图信息面板
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

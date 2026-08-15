@@ -70,12 +70,13 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Search, Loading } from '@element-plus/icons-vue'
 import api from '../api'
 
 const router = useRouter()
+const route = useRoute()
 const searchQuery = ref('')
 const searchType = ref('web')
 const loading = ref(false)
@@ -137,6 +138,15 @@ const highlight = (text) => {
   const safe = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return escaped.replace(new RegExp(`(${safe})`, 'gi'), '<mark>$1</mark>')
 }
+
+onMounted(() => {
+  if (route.query.q) {
+    searchQuery.value = route.query.q
+    if (searchType.value === 'file') {
+      searchFiles()
+    }
+  }
+})
 
 const getMediaUrl = (filePath) => {
   if (!filePath) return ''

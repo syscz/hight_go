@@ -75,6 +75,16 @@ body {
   color: #fff;
 }
 
+/* 图片加载淡入 */
+.img-fade {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.img-fade.is-loaded {
+  opacity: 1;
+}
+
 /* 浅色主题 */
 html[data-theme='light'] {
   --bg-base: #eef2f7;

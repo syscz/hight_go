@@ -33,6 +33,7 @@
           :src="getCoverUrl(item)"
           :alt="item.title"
           loading="lazy"
+          v-img-fade
         />
         <video v-else :src="getCoverUrl(item)" />
         <div class="media-overlay">

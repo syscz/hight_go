@@ -8,6 +8,7 @@
     <div class="lb-top">
       <span class="lb-count">{{ index + 1 }} / {{ items.length }}</span>
       <div class="lb-actions">
+        <button class="lb-btn" @click="infoVisible = !infoVisible">ℹ️ 信息</button>
         <button class="lb-btn" @click="download">⬇ 下载</button>
         <button class="lb-btn" @click="goDetail">详情</button>
         <button class="lb-close" @click="close">×</button>
@@ -35,11 +36,27 @@
     <div class="lb-caption">
       {{ current.title || current.filename }}
     </div>
+
+    <transition name="fade">
+      <div v-if="infoVisible" class="lb-info-panel">
+        <h4>媒体信息</h4>
+        <div class="info-row"><span>标题</span><b>{{ current.title || '—' }}</b></div>
+        <div class="info-row"><span>文件名</span><b>{{ current.filename || '—' }}</b></div>
+        <div class="info-row"><span>类型</span><b>{{ current.mediaType === 'image' ? '图片' : '视频' }}</b></div>
+        <div class="info-row"><span>大小</span><b>{{ formatSize(current.fileSize) }}</b></div>
+        <div class="info-row"><span>上传时间</span><b>{{ formatDate(current.createdAt) }}</b></div>
+        <div class="info-row"><span>浏览次数</span><b>{{ current.viewCount || 0 }}</b></div>
+        <div class="info-row" v-if="current.tags && current.tags.length">
+          <span>标签</span>
+          <b>{{ current.tags.map(t => t.name).join('、') }}</b>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -50,8 +67,22 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'update:index'])
 const router = useRouter()
+const infoVisible = ref(false)
 
 const current = computed(() => props.items[props.index] || null)
+
+const formatSize = (bytes) => {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleString()
+}
 
 const fullUrl = (path) => {
   if (!path) return ''
@@ -96,6 +127,7 @@ const onKeydown = (e) => {
 watch(
   () => props.visible,
   (v) => {
+    if (v) infoVisible.value = false
     if (v) document.addEventListener('keydown', onKeydown)
     else document.removeEventListener('keydown', onKeydown)
   }
@@ -226,5 +258,46 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.lb-info-panel {
+  position: absolute;
+  top: 4.5rem;
+  right: 1.25rem;
+  width: 260px;
+  background: rgba(18, 24, 32, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
+
+  h4 {
+    margin: 0 0 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    span {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    b {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-align: right;
+      word-break: break-all;
+    }
+  }
 }
 </style>

@@ -79,4 +79,28 @@ public class AuthService {
         me.setUsername(jwtService.getUsernameFromToken(token));
         return me;
     }
+
+    public void changePassword(String authHeader, String oldPassword, String newPassword) {
+        String token = extractToken(authHeader);
+        Long userId = jwtService.getUserIdFromToken(token);
+        User user = userMapper.findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        if (!verifyPassword(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("旧密码错误");
+        }
+        userMapper.updatePassword(userId, passwordEncoder.encode(newPassword));
+    }
+
+    private String extractToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("未登录");
+        }
+        String token = authHeader.substring(7);
+        if (!jwtService.validateToken(token)) {
+            throw new IllegalArgumentException("token无效");
+        }
+        return token;
+    }
 }

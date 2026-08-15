@@ -147,15 +147,25 @@
         </if>
     </sql>
 
+    <sql id="pageOrder">
+        <choose>
+            <when test="sort == 'created_asc'">ORDER BY m.created_at ASC, m.id ASC</when>
+            <when test="sort == 'name'">ORDER BY m.title ASC, m.id ASC</when>
+            <when test="sort == 'size'">ORDER BY m.file_size DESC, m.id ASC</when>
+            <when test="sort == 'type'">ORDER BY m.media_type ASC, m.id ASC</when>
+            <otherwise>ORDER BY m.id DESC</otherwise>
+        </choose>
+    </sql>
+
     <select id="findPage" resultMap="mediaResultMap">
         <include refid="mediaSelect"/>
         INNER JOIN (
             SELECT id FROM media m
             WHERE <include refid="pageConditions"/>
-            ORDER BY id
+            <include refid="pageOrder"/>
             LIMIT #{offset}, #{size}
         ) AS page_ids ON page_ids.id = m.id
-        ORDER BY m.id
+        <include refid="pageOrder"/>
     </select>
 
     <select id="countPage" resultType="long">

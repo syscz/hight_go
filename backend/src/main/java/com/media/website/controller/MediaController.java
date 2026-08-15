@@ -127,6 +127,7 @@ public class MediaController {
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sort,
             @RequestHeader("Authorization") String authHeader) {
 
         Long userId = authUtils.getUserId(authHeader);
@@ -137,7 +138,7 @@ public class MediaController {
         if (page != null) {
             int pageSize = size != null ? size : 24;
             PageResultVO<Media> result = mediaService.getMediaPage(
-                    userId, page, pageSize, type, categoryId, albumId, keyword, favorite, deleted, tagId);
+                    userId, page, pageSize, type, categoryId, albumId, keyword, favorite, deleted, tagId, sort);
             PageResultVO<MediaVO> vo = PageResultVO.of(
                     result.getList().stream().map(MediaVO::from).collect(Collectors.toList()),
                     result.getTotal(), result.getPage(), result.getSize());

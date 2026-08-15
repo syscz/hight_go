@@ -32,6 +32,7 @@ public interface MediaMapper {
                          @Param("type") Media.MediaType type, @Param("categoryId") Long categoryId,
                          @Param("albumId") Long albumId, @Param("keyword") String keyword,
                          @Param("favorite") Boolean favorite, @Param("tagId") Long tagId,
+                         @Param("sort") String sort,
                          @Param("offset") int offset, @Param("size") int size);
 
     long countPage(@Param("userId") Long userId, @Param("deleted") boolean deleted,

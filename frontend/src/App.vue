@@ -7,6 +7,9 @@
         <router-link to="/" class="side-link">
           <span class="side-icon">🖼</span><span>照片</span>
         </router-link>
+        <router-link to="/upload" class="side-link">
+          <span class="side-icon">⬆️</span><span>上传</span>
+        </router-link>
         <router-link to="/?viewMode=albums" class="side-link">
           <span class="side-icon">📁</span><span>相册</span>
         </router-link>
@@ -31,12 +34,24 @@
           {{ isDark ? '☀️' : '🌙' }}
         </button>
         <span v-if="currentUser" class="user-name">{{ currentUser.username }}</span>
+        <button v-if="currentUser" class="logout-btn" @click="passwordDialogVisible = true">改密码</button>
         <button v-if="currentUser" class="logout-btn" @click="handleLogout">退出</button>
       </div>
     </aside>
 
     <!-- 主内容 -->
     <div class="main-area">
+      <div class="topbar">
+        <el-input
+          v-model="globalKeyword"
+          placeholder="搜索媒体..."
+          clearable
+          class="global-search"
+          @keyup.enter="doGlobalSearch"
+        >
+          <template #prefix>🔍</template>
+        </el-input>
+      </div>
       <header class="mobile-header">
         <router-link to="/" class="mobile-logo">SEE</router-link>
         <button class="theme-toggle" @click="toggleTheme">{{ isDark ? '☀️' : '🌙' }}</button>
@@ -54,16 +69,36 @@
     <nav class="mobile-nav">
       <router-link to="/" class="mobile-link"><span>🖼</span><span>照片</span></router-link>
       <router-link to="/?viewMode=albums" class="mobile-link"><span>📁</span><span>相册</span></router-link>
+      <router-link to="/upload" class="mobile-link mobile-upload"><span class="upload-plus">＋</span></router-link>
       <router-link to="/search" class="mobile-link"><span>🔍</span><span>搜索</span></router-link>
       <router-link to="/calendar" class="mobile-link"><span>📅</span><span>日历</span></router-link>
-      <router-link to="/public" class="mobile-link"><span>🌍</span><span>广场</span></router-link>
     </nav>
+
+    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="360px" align-center>
+      <el-form label-width="80px">
+        <el-form-item label="旧密码">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="至少 6 位" />
+        </el-form-item>
+        <el-form-item label="确认新密码">
+          <el-input v-model="pwdForm.confirm" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passwordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleChangePassword">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import api from '@/api/index'
 
 const router = useRouter()
 
@@ -79,6 +114,34 @@ const toggleTheme = () => {
   isDark.value = !isDark.value
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
   document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+}
+
+const globalKeyword = ref('')
+const passwordDialogVisible = ref(false)
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirm: '' })
+
+const doGlobalSearch = () => {
+  if (globalKeyword.value.trim()) {
+    router.push({ path: '/search', query: { q: globalKeyword.value.trim() } })
+  }
+}
+
+const handleChangePassword = async () => {
+  if (pwdForm.value.newPassword !== pwdForm.value.confirm) {
+    ElMessage.error('两次新密码不一致')
+    return
+  }
+  try {
+    await api.put('/auth/password', {
+      oldPassword: pwdForm.value.oldPassword,
+      newPassword: pwdForm.value.newPassword
+    })
+    ElMessage.success('密码修改成功')
+    passwordDialogVisible.value = false
+    pwdForm.value = { oldPassword: '', newPassword: '', confirm: '' }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.error || '修改失败')
+  }
 }
 
 const handleLogout = () => {
@@ -190,6 +253,27 @@ const handleLogout = () => {
   flex: 1;
   margin-left: 210px;
   min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 950;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.7rem 1.5rem;
+  background: rgba(10, 10, 12, 0.75);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  .global-search {
+    width: 260px;
+  }
+}
+
+html[data-theme='light'] .topbar {
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom-color: rgba(15, 30, 50, 0.08);
 }
 
 .main {
@@ -320,6 +404,26 @@ html[data-theme='light'] .sidebar {
         color: #4fc3f7;
       }
     }
+
+    .mobile-upload {
+      .upload-plus {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+        color: #06222e;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: -1.1rem;
+        box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
+      }
+
+      &.router-link-active .upload-plus {
+        transform: scale(1.05);
+      }
+    }
   }
 
   html[data-theme='light'] .mobile-nav {
@@ -337,6 +441,10 @@ html[data-theme='light'] .sidebar {
 
   .main {
     padding: 0.75rem 0.6rem calc(4.5rem + env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    display: none;
   }
 }
 

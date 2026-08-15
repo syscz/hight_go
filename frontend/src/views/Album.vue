@@ -72,6 +72,7 @@
               :src="getMediaUrl(media.filePath)"
               :alt="media.title"
               loading="lazy"
+              v-img-fade
             />
             <div v-else class="video-thumbnail">
               <img :src="getMediaUrl(media.coverImage) || '/placeholder-video.png'" :alt="media.title" loading="lazy" />
@@ -486,6 +487,12 @@ onUnmounted(() => {
 .media-item:hover .media-checkbox,
 .media-item.selected .media-checkbox {
   opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .media-checkbox {
+    opacity: 1;
+  }
 }
 
 .media-thumbnail {
