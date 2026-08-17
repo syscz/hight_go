@@ -182,6 +182,12 @@
 - [x] 7 看图信息面板（MediaLightbox ℹ️ 按钮 + 右侧信息面板）
 - **状态：** complete
 
+## 阶段 18：Bug 修复 + 相册排序（用户确认）
+- [x] 修复 Album 无法删除：checkbox v-model 与 toggleSelection 双重触发互相抵消
+- [x] 修复无法放大：MediaLightbox 全屏看图加滚轮/点击/按钮缩放（0.5x-5x）
+- [x] 相册排序：media 表 sort_order + 相册内按序查询（含分页）+ PUT /api/albums/{id}/order + Album 前端排序模式（上移/下移）
+- **状态：** complete
+
 ## 已做决策
 | 决策 | 理由 |
 |------|------|

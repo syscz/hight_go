@@ -7,7 +7,14 @@
       </div>
       <div class="header-actions">
         <el-button round @click="goBack">← 返回</el-button>
-        <el-button round type="primary" @click="startSlideshow" v-if="mediaList.length > 0">▶ 播放</el-button>
+        <template v-if="!sortMode">
+          <el-button round @click="enterSortMode" v-if="mediaList.length > 1">↕ 排序</el-button>
+          <el-button round type="primary" @click="startSlideshow" v-if="mediaList.length > 0">▶ 播放</el-button>
+        </template>
+        <template v-else>
+          <el-button round @click="cancelSort">取消</el-button>
+          <el-button round type="success" @click="saveOrder">保存排序</el-button>
+        </template>
       </div>
     </header>
 
@@ -56,15 +63,22 @@
 
       <div v-loading="loading" class="media-grid">
         <div
-          v-for="(media, index) in filteredMediaList"
+          v-for="(media, index) in (sortMode ? sortItems : filteredMediaList)"
           :key="media.id"
           class="media-item"
           :class="{ selected: selectedIds.includes(media.id) }"
-          @click="handleItemClick(media.id, index)"
+          @click="sortMode ? null : handleItemClick(media.id, index)"
           @click.right.prevent="toggleSelection(media.id)"
         >
+          <div v-if="sortMode" class="sort-controls">
+            <button @click.stop="moveUp(index)" :disabled="index === 0">↑</button>
+            <button @click.stop="moveDown(index)" :disabled="index === (sortMode ? sortItems.length : 0) - 1">↓</button>
+          </div>
           <div class="media-checkbox" @click.stop="toggleSelection(media.id)">
-            <el-checkbox v-model="selectedIds" :value="media.id" />
+            <el-checkbox
+              :model-value="selectedIds.includes(media.id)"
+              @change="toggleSelection(media.id)"
+            />
           </div>
           <div class="media-thumbnail">
             <img
@@ -170,6 +184,8 @@ const playing = ref(false)
 let ssTimer = null
 const lightboxVisible = ref(false)
 const lightboxIndex = ref(0)
+const sortMode = ref(false)
+const sortItems = ref([])
 
 const mediaList = computed(() => mediaStore.mediaList)
 const loading = computed(() => mediaStore.loading)
@@ -262,6 +278,45 @@ const startSlideshow = () => {
   slideshowVisible.value = true
   playing.value = true
   ssAuto()
+}
+
+const enterSortMode = () => {
+  sortItems.value = [...filteredMediaList.value]
+  sortMode.value = true
+  selectedIds.value = []
+}
+
+const cancelSort = () => {
+  sortMode.value = false
+  sortItems.value = []
+}
+
+const moveUp = (index) => {
+  if (index <= 0) return
+  const arr = sortItems.value
+  ;[arr[index - 1], arr[index]] = [arr[index], arr[index - 1]]
+  sortItems.value = [...arr]
+}
+
+const moveDown = (index) => {
+  if (index >= sortItems.value.length - 1) return
+  const arr = sortItems.value
+  ;[arr[index + 1], arr[index]] = [arr[index], arr[index + 1]]
+  sortItems.value = [...arr]
+}
+
+const saveOrder = async () => {
+  try {
+    await api.put(`/albums/${route.params.id}/order`, {
+      mediaIds: sortItems.value.map(m => m.id)
+    })
+    ElMessage.success('排序已保存')
+    sortMode.value = false
+    sortItems.value = []
+    await fetchAlbumData()
+  } catch (error) {
+    ElMessage.error('保存失败')
+  }
 }
 
 const ssAuto = () => {
@@ -482,6 +537,38 @@ onUnmounted(() => {
   z-index: 10;
   opacity: 0;
   transition: opacity 0.2s;
+}
+
+.sort-controls {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      background: rgba(79, 195, 247, 0.7);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
 }
 
 .media-item:hover .media-checkbox,

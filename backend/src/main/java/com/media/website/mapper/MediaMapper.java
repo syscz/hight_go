@@ -73,4 +73,7 @@ public interface MediaMapper {
     int updateIsPublic(@Param("id") Long id, @Param("isPublic") boolean isPublic);
 
     int renameTitle(@Param("id") Long id,@Param("userId") Long userId,@Param("title") String title);
+
+    int updateSortOrder(@Param("id") Long id, @Param("userId") Long userId,
+                        @Param("sortOrder") int sortOrder);
 }

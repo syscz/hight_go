@@ -202,6 +202,10 @@
 ## 补齐 1-7（2026-08-15）
 - 上传入口（侧边栏 + 移动端 + 按钮）、修改密码、图片淡入、移动端多选、顶部搜索、排序、看图信息面板
 
+## Bug 修复 + 相册排序（2026-08-17）
+- checkbox v-model + 手动 toggle 双重绑定互相抵消（删除失效根因）；全屏看图缺缩放
+- 排序：sort_order 字段 + 分页/非分页查询统一按序 + 保存顺序接口 + 前端上移/下移模式
+
 ## 资源
 - 后端源码：backend/src/main/java/com/media/website/
 - 数据库脚本：backend/src/main/resources/db/

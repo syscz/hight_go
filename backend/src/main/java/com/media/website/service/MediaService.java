@@ -118,6 +118,15 @@ public class MediaService {
         }
     }
 
+    public void updateAlbumOrder(Long userId, Long albumId, java.util.List<Long> mediaIds) {
+        albumService.getAlbumById(albumId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("相册不存在"));
+        int order = 0;
+        for (Long mediaId : mediaIds) {
+            mediaMapper.updateSortOrder(mediaId, userId, order++);
+        }
+    }
+
     public Media uploadMedia(Long userId, MultipartFile file, String title, String description,
                              Long categoryId, Long albumId) {
         try {

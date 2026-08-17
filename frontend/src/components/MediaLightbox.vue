@@ -22,6 +22,10 @@
         v-if="current.mediaType === 'image'"
         :src="fullUrl(current.filePath)"
         :alt="current.title || current.filename"
+        :style="{ transform: `scale(${scale})` }"
+        class="lb-image"
+        @wheel.prevent="handleWheel"
+        @click="toggleZoom"
       />
       <video
         v-else
@@ -35,6 +39,11 @@
 
     <div class="lb-caption">
       {{ current.title || current.filename }}
+      <span v-if="current.mediaType === 'image'" class="lb-zoom-controls">
+        <button @click="zoomOut">−</button>
+        <span>{{ Math.round(scale * 100) }}%</span>
+        <button @click="zoomIn">+</button>
+      </span>
     </div>
 
     <transition name="fade">
@@ -68,8 +77,26 @@ const props = defineProps({
 const emit = defineEmits(['update:visible', 'update:index'])
 const router = useRouter()
 const infoVisible = ref(false)
+const scale = ref(1)
 
 const current = computed(() => props.items[props.index] || null)
+
+const zoomIn = () => {
+  scale.value = Math.min(scale.value + 0.25, 5)
+}
+
+const zoomOut = () => {
+  scale.value = Math.max(scale.value - 0.25, 0.5)
+}
+
+const toggleZoom = () => {
+  scale.value = scale.value !== 1 ? 1 : 2
+}
+
+const handleWheel = (e) => {
+  if (e.deltaY < 0) zoomIn()
+  else zoomOut()
+}
 
 const formatSize = (bytes) => {
   if (!bytes) return '0 B'
@@ -128,6 +155,7 @@ watch(
   () => props.visible,
   (v) => {
     if (v) infoVisible.value = false
+    if (v) scale.value = 1
     if (v) document.addEventListener('keydown', onKeydown)
     else document.removeEventListener('keydown', onKeydown)
   }
@@ -245,6 +273,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     object-fit: contain;
     border-radius: 6px;
   }
+
+  .lb-image {
+    transition: transform 0.2s ease;
+    cursor: zoom-in;
+  }
 }
 
 .lb-caption {
@@ -258,6 +291,40 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .lb-zoom-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+
+    button {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(79, 195, 247, 0.4);
+      }
+    }
+
+    span {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.85);
+      min-width: 40px;
+      text-align: center;
+    }
+  }
 }
 
 .lb-info-panel {

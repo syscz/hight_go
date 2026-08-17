@@ -85,7 +85,7 @@
     <select id="findByAlbumIdAndUserId" resultMap="mediaResultMap">
         <include refid="mediaSelect"/>
         WHERE m.album_id = #{albumId} AND m.user_id = #{userId} AND m.is_deleted = FALSE
-        ORDER BY m.id
+        ORDER BY m.sort_order, m.id
     </select>
 
     <select id="findByUserIdAndCategoryId" resultMap="mediaResultMap">
@@ -153,6 +153,7 @@
             <when test="sort == 'name'">ORDER BY m.title ASC, m.id ASC</when>
             <when test="sort == 'size'">ORDER BY m.file_size DESC, m.id ASC</when>
             <when test="sort == 'type'">ORDER BY m.media_type ASC, m.id ASC</when>
+            <when test="albumId != null">ORDER BY m.sort_order, m.id</when>
             <otherwise>ORDER BY m.id DESC</otherwise>
         </choose>
     </sql>
@@ -273,6 +274,12 @@
     <update id="renameTitle">
         UPDATE media
         SET title = #{title}, updated_at = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <update id="updateSortOrder">
+        UPDATE media
+        SET sort_order = #{sortOrder}, updated_at = NOW()
         WHERE id = #{id} AND user_id = #{userId}
     </update>
 

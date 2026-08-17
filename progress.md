@@ -260,6 +260,13 @@
 - 验证（本地）：错误旧密码 400、修改成功 200、新密码可登录、改回成功；排序 name/size 正常
 - 部署：index-D8Ukv6wn.js
 
+### 补充：2026-08-17 Bug 修复 + 相册排序
+- Bug1 相册无法删除：el-checkbox v-model 与手动 toggleSelection 双重触发互相抵消（选上又取消）→ 改单向 :model-value + @change
+- Bug2 无法放大：全屏看图组件无缩放 → 加滚轮缩放/点击切换 1x↔2x/底部 +− 按钮（0.5x-5x）
+- 相册排序：media 表加 sort_order；相册查询（含分页 findPage）ORDER BY sort_order；PUT /api/albums/{id}/order 批量保存；Album 页"↕ 排序"模式（上移/下移 + 保存/取消）
+- 验证（线上）：排序保存 200；带/不带分页均按新顺序返回；已恢复原序
+- 部署：index-BBQCkCZj.js
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|

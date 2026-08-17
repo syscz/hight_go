@@ -1,10 +1,14 @@
 package com.media.website.controller;
 
 import com.media.website.dto.AlbumCreateRequestDto;
+import com.media.website.dto.AlbumOrderRequestDto;
 import com.media.website.dto.AlbumUpdateRequestDto;
 import com.media.website.entity.Album;
 import com.media.website.service.AlbumService;
+import com.media.website.service.MediaService;
 import com.media.website.util.AuthUtils;
+import com.media.website.vo.ApiErrorVO;
+import com.media.website.vo.ApiMessageVO;
 import com.media.website.vo.AlbumVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import java.util.stream.Collectors;
 public class AlbumController {
 
     private final AlbumService albumService;
+    private final MediaService mediaService;
     private final AuthUtils authUtils;
 
     @GetMapping
@@ -90,6 +95,22 @@ public class AlbumController {
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).build();
+        }
+    }
+
+    @PutMapping("/{id}/order")
+    public ResponseEntity<?> updateAlbumOrder(@PathVariable Long id,
+                                              @Valid @RequestBody AlbumOrderRequestDto request,
+                                              @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            mediaService.updateAlbumOrder(userId, id, request.getMediaIds());
+            return ResponseEntity.ok(new ApiMessageVO("排序已保存"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
         }
     }
 }
