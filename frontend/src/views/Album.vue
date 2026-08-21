@@ -74,7 +74,7 @@
             <button @click.stop="moveUp(index)" :disabled="index === 0">↑</button>
             <button @click.stop="moveDown(index)" :disabled="index === (sortMode ? sortItems.length : 0) - 1">↓</button>
           </div>
-          <div class="media-checkbox" @click.stop="toggleSelection(media.id)">
+          <div class="media-checkbox" @click.stop>
             <el-checkbox
               :model-value="selectedIds.includes(media.id)"
               @change="toggleSelection(media.id)"
