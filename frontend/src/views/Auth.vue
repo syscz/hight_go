@@ -74,6 +74,9 @@
 
       <p v-if="error" class="error-msg">{{ error }}</p>
       <p v-if="success" class="success-msg">{{ success }}</p>
+      <p class="guest-link">
+        <router-link to="/public">游客访问公开广场 →</router-link>
+      </p>
     </div>
   </div>
 </template>
@@ -272,5 +275,21 @@ const handleRegister = async () => {
   text-align: center;
   margin-top: 1rem;
   font-size: 0.9rem;
+}
+
+.guest-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.88rem;
+
+  a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #4fc3f7;
+    }
+  }
 }
 </style>

@@ -75,7 +75,12 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   if (to.meta.requiresAuth && !token) {
-    next({ name: 'Auth' })
+    // 未登录:访问根路径去公开广场(游客可看),其他受保护页才跳登录
+    if (to.path === '/') {
+      next({ name: 'PublicGallery' })
+    } else {
+      next({ name: 'Auth' })
+    }
   } else if (to.name === 'Auth' && token) {
     next({ name: 'Home' })
   } else {
