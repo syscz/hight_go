@@ -122,6 +122,8 @@
         </div>
       </div>
 
+      <div v-if="hasMore && !loadingMore" ref="sentinel" class="scroll-sentinel">加载中…</div>
+
       <el-dialog v-model="moveDialogVisible" title="移动到相册" width="400px">
         <el-select v-model="targetAlbumId" placeholder="选择目标相册" style="width: 100%">
           <el-option
@@ -176,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -207,8 +209,15 @@ const sortMode = ref(false)
 const sortItems = ref([])
 const coverMode = ref(false)
 
-const mediaList = computed(() => mediaStore.mediaList)
-const loading = computed(() => mediaStore.loading)
+// 相册内媒体的本地分页累积（不再一次性拉全库）
+const mediaList = ref([])
+const loading = ref(true)
+const loadingMore = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(24)
+const totalMedia = ref(0)
+const sentinel = ref(null)
+let observer = null
 
 const currentAlbum = computed(() =>
   mediaStore.albums.find(a => a.id === parseInt(route.params.id)) || null
@@ -230,17 +239,42 @@ const ssMedia = computed(() => filteredMediaList.value[ssIndex.value] || null)
 
 const fetchAlbumData = async () => {
   const albumId = route.params.id
-  await mediaStore.fetchMediaList(null, null, albumId)
+  // 相册名/描述从相册列表取（列表本身很小）
+  await mediaStore.fetchAlbums()
   const album = mediaStore.albums.find(a => a.id === parseInt(albumId))
-  if (album) {
-    albumName.value = album.name
-  } else {
-    albumName.value = '相册'
+  albumName.value = album ? album.name : '相册'
+}
+
+/** 分页拉取相册内媒体（后端按 sort_order 保持手动排序） */
+const fetchPage = async (append = false) => {
+  if (append) loadingMore.value = true
+  try {
+    const response = await api.get(`/media`, {
+      params: { albumId: route.params.id, page: currentPage.value, size: pageSize.value }
+    })
+    const data = response.data
+    const list = Array.isArray(data) ? data : (data.list || [])
+    const total = Array.isArray(data) ? list.length : (data.total || 0)
+    mediaList.value = append ? [...mediaList.value, ...list] : list
+    totalMedia.value = total
+  } catch (error) {
+    console.error('获取相册媒体失败', error)
+  } finally {
+    loading.value = false
+    loadingMore.value = false
   }
 }
 
+const hasMore = computed(() => mediaList.value.length < totalMedia.value)
+
+const loadMore = () => {
+  if (loadingMore.value || !hasMore.value) return
+  currentPage.value += 1
+  fetchPage(true)
+}
+
 const handleTypeChange = () => {
-  fetchAlbumData()
+  // 类型筛选是前端过滤，不需要重新请求
 }
 
 const handleItemClick = (id, index) => {
@@ -348,7 +382,14 @@ const startSlideshow = () => {
   ssAuto()
 }
 
-const enterSortMode = () => {
+const enterSortMode = async () => {
+  // 手动排序必须基于完整有序列表：还有未加载的分页时先补齐
+  if (hasMore.value) {
+    ElMessage.info('正在加载全部媒体以进行排序…')
+    while (hasMore.value) {
+      await loadMore()
+    }
+  }
   sortItems.value = [...filteredMediaList.value]
   sortMode.value = true
   selectedIds.value = []
@@ -486,11 +527,21 @@ onMounted(() => {
   mediaStore.fetchAlbums().then(() => {
     fetchAlbumData()
   })
+  fetchPage()
   api.get('/tags').then(r => { allTags.value = r.data }).catch(() => {})
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore()
+  }, { rootMargin: '300px' })
+  watch(hasMore, (more) => {
+    if (more) nextTick(() => {
+      if (sentinel.value && observer) observer.observe(sentinel.value)
+    })
+  })
 })
 
 onUnmounted(() => {
   clearInterval(ssTimer)
+  if (observer) observer.disconnect()
 })
 </script>
 

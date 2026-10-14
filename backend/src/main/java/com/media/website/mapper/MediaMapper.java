@@ -79,6 +79,9 @@ public interface MediaMapper {
     /** 随机取公开媒体（含作者昵称/头像），供公开广场使用 */
     List<MediaVO> findRandomPublic(@Param("limit") int limit);
 
+    /** 相册内全部媒体按手动排序（分享页等无属主场景） */
+    List<Media> findByAlbumId(@Param("albumId") Long albumId);
+
     int updateIsPublic(@Param("id") Long id, @Param("isPublic") boolean isPublic);
 
     int renameTitle(@Param("id") Long id,@Param("userId") Long userId,@Param("title") String title);

@@ -37,9 +37,7 @@
     </template>
 
     <div class="ig-veil">
-      <span class="ig-veil-item" :class="{ fav: item.isFavorite }">
-        {{ item.isFavorite ? '♥' : '♡' }}
-      </span>
+      <span class="ig-veil-item">♥ {{ item.likeCount || 0 }}</span>
       <span class="ig-veil-item">👁 {{ item.viewCount || 0 }}</span>
     </div>
   </div>

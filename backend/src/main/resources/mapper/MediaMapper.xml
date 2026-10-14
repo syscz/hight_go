@@ -306,6 +306,7 @@
         <result property="updatedAt" column="updated_at"/>
         <result property="authorName" column="author_name"/>
         <result property="authorAvatar" column="author_avatar"/>
+        <result property="likeCount" column="like_count"/>
         <association property="category" columnPrefix="cat_" javaType="com.media.website.vo.CategoryVO">
             <id property="id" column="id"/>
             <result property="name" column="name"/>
@@ -332,11 +333,18 @@
     </resultMap>
 
     <!-- 先随机选出 id 再 join，避免 ORDER BY RAND() 配合 LIMIT 把同一媒体的 tag 行切散 -->
+    <select id="findByAlbumId" resultMap="mediaResultMap">
+        <include refid="mediaSelect"/>
+        WHERE m.album_id = #{albumId} AND m.is_deleted = FALSE
+        ORDER BY m.sort_order, m.id
+    </select>
+
     <select id="findRandomPublic" resultMap="mediaVoWithAuthorMap">
         SELECT m.id, m.filename, m.original_filename, m.file_path, m.video_mp4_path, m.file_size, m.file_type, m.media_type,
                m.title, m.description, m.user_id, m.cover_image, m.duration, m.view_count,
                m.is_favorite, m.is_deleted, m.is_public, m.deleted_at, m.created_at, m.updated_at,
                u.username AS author_name, u.avatar AS author_avatar,
+               (SELECT COUNT(*) FROM media_likes ml WHERE ml.media_id = m.id) AS like_count,
                c.id AS cat_id, c.name AS cat_name, c.description AS cat_description,
                c.created_at AS cat_created_at, c.updated_at AS cat_updated_at,
                a.id AS alb_id, a.name AS alb_name, a.description AS alb_description,

@@ -16,6 +16,9 @@ public class Album {
 
     private Long userId;
 
+    /** 相册分享令牌（null = 未开启分享） */
+    private String shareToken;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -47,6 +50,14 @@ public class Album {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getShareToken() {
+        return shareToken;
+    }
+
+    public void setShareToken(String shareToken) {
+        this.shareToken = shareToken;
     }
 
     public void setDescription(String description) {

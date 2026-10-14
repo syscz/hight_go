@@ -8,6 +8,10 @@
     <div class="lb-top">
       <span class="lb-count">{{ index + 1 }} / {{ items.length }}</span>
       <div class="lb-actions">
+        <button class="lb-btn like-btn" :class="{ liked: liked }" @click="toggleLike">
+          {{ liked ? '♥' : '♡' }} {{ likeCount }}
+        </button>
+        <button class="lb-btn" @click="toggleComments">💬 评论 ({{ comments.length }})</button>
         <button class="lb-btn" @click="infoVisible = !infoVisible">ℹ️ 信息</button>
         <button class="lb-btn" @click="download">⬇ 下载</button>
         <button class="lb-btn" @click="goDetail">详情</button>
@@ -47,6 +51,33 @@
     </div>
 
     <transition name="fade">
+      <div v-if="commentsVisible" class="lb-comments-panel">
+        <h4>评论</h4>
+        <div class="lb-comments-list">
+          <div v-for="c in comments" :key="c.id" class="lb-comment">
+            <div class="lb-comment-head">
+              <b>{{ c.username }}</b>
+              <span>{{ formatDate(c.createdAt) }}</span>
+            </div>
+            <div class="lb-comment-body">{{ c.content }}</div>
+          </div>
+          <div v-if="comments.length === 0" class="lb-comment-empty">还没有评论，来抢沙发～</div>
+        </div>
+        <div v-if="isLoggedIn" class="lb-comment-input">
+          <input
+            v-model="commentInput"
+            type="text"
+            placeholder="写下你的评论..."
+            maxlength="200"
+            @keyup.enter="submitComment"
+          />
+          <button @click="submitComment" :disabled="!commentInput.trim()">发送</button>
+        </div>
+        <p v-else class="lb-comment-login"><router-link to="/auth">登录</router-link> 后即可评论</p>
+      </div>
+    </transition>
+
+    <transition name="fade">
       <div v-if="infoVisible" class="lb-info-panel">
         <h4>媒体信息</h4>
         <div class="info-row"><span>标题</span><b>{{ current.title || '—' }}</b></div>
@@ -70,6 +101,8 @@
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import api from '@/api/index'
 import { resolveMediaUrl, videoPlaySrc, formatDuration } from '@/utils/media'
 
 const props = defineProps({
@@ -82,6 +115,71 @@ const emit = defineEmits(['update:visible', 'update:index'])
 const router = useRouter()
 const infoVisible = ref(false)
 const scale = ref(1)
+
+// 点赞与评论
+const liked = ref(false)
+const likeCount = ref(0)
+const commentsVisible = ref(false)
+const comments = ref([])
+const commentInput = ref('')
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+
+const resetSocialState = () => {
+  const item = current.value
+  liked.value = !!item?.likedByMe
+  likeCount.value = item?.likeCount || 0
+  comments.value = []
+  commentInput.value = ''
+  commentsVisible.value = false
+}
+
+const toggleLike = async () => {
+  if (!isLoggedIn.value) {
+    ElMessage.info('登录后即可点赞')
+    return
+  }
+  try {
+    const response = await api.post(`/media/${current.value.id}/like`)
+    liked.value = response.data.liked
+    likeCount.value = response.data.likeCount
+    // 同步回列表数据，关闭灯箱后网格计数一致
+    if (current.value) {
+      current.value.likeCount = likeCount.value
+      current.value.likedByMe = liked.value
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.error || '操作失败')
+  }
+}
+
+const toggleComments = async () => {
+  commentsVisible.value = !commentsVisible.value
+  infoVisible.value = false
+  if (commentsVisible.value && comments.value.length === 0) {
+    try {
+      const response = await api.get(`/comments/media/${current.value.id}`)
+      comments.value = response.data || []
+    } catch (error) {
+      console.error('获取评论失败', error)
+    }
+  }
+}
+
+const submitComment = async () => {
+  if (!commentInput.value.trim() || !current.value) return
+  try {
+    await api.post('/comments', {
+      mediaId: current.value.id,
+      content: commentInput.value.trim()
+    })
+    commentInput.value = ''
+    const response = await api.get(`/comments/media/${current.value.id}`)
+    comments.value = response.data || []
+    ElMessage.success('评论发布成功')
+  } catch (error) {
+    ElMessage.error(error.response?.data?.error || '发布失败')
+  }
+}
 
 const current = computed(() => props.items[props.index] || null)
 
@@ -133,6 +231,7 @@ const preloadAdjacent = () => {
 watch(() => props.index, () => {
   scale.value = 1
   preloadAdjacent()
+  resetSocialState()
 })
 
 const close = () => emit('update:visible', false)
@@ -174,6 +273,7 @@ watch(
   (v) => {
     if (v) infoVisible.value = false
     if (v) scale.value = 1
+    if (v) resetSocialState()
     if (v) document.addEventListener('keydown', onKeydown)
     else document.removeEventListener('keydown', onKeydown)
   }
@@ -341,6 +441,112 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       color: rgba(255, 255, 255, 0.85);
       min-width: 40px;
       text-align: center;
+    }
+  }
+}
+
+.like-btn.liked {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.lb-comments-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 70px;
+  width: 320px;
+  max-height: 55vh;
+  overflow-y: auto;
+  background: var(--bg-elevated, #1b2230);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 14px;
+  z-index: 5;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  h4 {
+    margin: 0 0 8px;
+    color: var(--text-primary, #fff);
+    font-size: 0.95rem;
+  }
+
+  .lb-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .lb-comment {
+    .lb-comment-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted, #9aa4b5);
+      margin-bottom: 2px;
+
+      b {
+        color: var(--text-secondary, #cfd8e3);
+      }
+    }
+
+    .lb-comment-body {
+      color: var(--text-secondary, #cfd8e3);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+  }
+
+  .lb-comment-empty {
+    color: var(--text-muted, #9aa4b5);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .lb-comment-input {
+    display: flex;
+    gap: 6px;
+
+    input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      color: var(--text-primary, #fff);
+      padding: 7px 10px;
+      font-size: 0.85rem;
+      outline: none;
+
+      &:focus {
+        border-color: #4fc3f7;
+      }
+    }
+
+    button {
+      background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+      border: none;
+      color: #06222e;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 0 14px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .lb-comment-login {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-muted, #9aa4b5);
+
+    a {
+      color: #4fc3f7;
     }
   }
 }

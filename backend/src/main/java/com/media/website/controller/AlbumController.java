@@ -15,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -95,6 +97,39 @@ public class AlbumController {
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).build();
+        }
+    }
+
+    @PostMapping("/{id}/share")
+    public ResponseEntity<?> createShare(@PathVariable Long id,
+                                         @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            String token = albumService.createShareToken(id, userId);
+            Map<String, Object> body = new HashMap<>();
+            body.put("token", token);
+            body.put("path", "/s/" + token);
+            return ResponseEntity.ok(body);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(new ApiErrorVO(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}/share")
+    public ResponseEntity<?> disableShare(@PathVariable Long id,
+                                          @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            albumService.disableShare(id, userId);
+            return ResponseEntity.ok(new ApiMessageVO("分享已关闭"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(new ApiErrorVO(e.getMessage()));
         }
     }
 

@@ -109,6 +109,14 @@
           <div class="album-name">{{ album.name }}</div>
           <div class="album-count">🎨 {{ album.mediaCount || 0 }} 个作品</div>
           <el-button
+            type="primary"
+            :icon="Share"
+            circle
+            size="small"
+            class="share-btn"
+            @click.stop="openShareDialog(album)"
+          />
+          <el-button
             v-if="album.name !== '默认相册'"
             type="danger"
             :icon="Delete"
@@ -155,6 +163,20 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="shareDialog.visible" title="分享相册" width="420px" align-center>
+      <p class="share-tip">开启后，任何拿到链接的人（无需注册登录）都可以浏览这个相册的全部内容。</p>
+      <el-input v-model="shareDialog.link" readonly size="large">
+        <template #append>
+          <el-button @click="copyShareLink">复制</el-button>
+        </template>
+      </el-input>
+      <template #footer>
+        <el-button @click="shareDialog.visible = false">关闭</el-button>
+        <el-button type="danger" plain @click="disableShare">停止分享</el-button>
+        <el-button type="primary" @click="copyShareLink">复制链接</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="moveDialogVisible" title="移动到相册" width="360px">
       <el-select v-model="targetAlbumId" placeholder="选择目标相册" style="width: 100%">
         <el-option v-for="album in albums" :key="album.id" :label="album.name" :value="album.id" />
@@ -198,7 +220,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, Share } from '@element-plus/icons-vue'
 import api from '@/api/index'
 import { resolveMediaUrl } from '@/utils/media'
 import MediaLightbox from '../components/MediaLightbox.vue'
@@ -316,6 +338,42 @@ const handleDeleteAlbum = async (albumId) => {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
     }
+  }
+}
+
+const shareDialog = ref({ visible: false, albumId: null, token: '', link: '' })
+
+const openShareDialog = async (album) => {
+  try {
+    const response = await api.post(`/albums/${album.id}/share`)
+    shareDialog.value = {
+      visible: true,
+      albumId: album.id,
+      token: response.data.token,
+      link: window.location.origin + response.data.path
+    }
+  } catch (error) {
+    ElMessage.error('生成分享链接失败')
+  }
+}
+
+const copyShareLink = async () => {
+  try {
+    await navigator.clipboard.writeText(shareDialog.value.link)
+    ElMessage.success('链接已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动复制')
+  }
+}
+
+const disableShare = async () => {
+  try {
+    await ElMessageBox.confirm('停止后已分享的链接将立即失效，确定吗？', '提示', { type: 'warning' })
+    await api.delete(`/albums/${shareDialog.value.albumId}/share`)
+    ElMessage.success('已停止分享')
+    shareDialog.value.visible = false
+  } catch (error) {
+    if (error !== 'cancel') ElMessage.error('操作失败')
   }
 }
 
@@ -675,6 +733,33 @@ onBeforeUnmount(() => {
     top: 0.4rem;
     right: 0.4rem;
     z-index: 5;
+  }
+
+  .share-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 3rem;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s;
+    z-index: 5;
+  }
+
+  &:hover .share-btn {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  &.has-cover .share-btn {
+    top: 0.4rem;
+    right: 3rem;
+  }
+
+  .share-tip {
+    margin: 0 0 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
   }
 
   .album-icon {

@@ -206,8 +206,27 @@ public class MediaController {
             m.setViewCount((m.getViewCount() == null ? 0 : m.getViewCount()) + 1);
         });
         return media
-                .map(m -> ResponseEntity.ok(MediaVO.from(m)))
+                .map(m -> {
+                    MediaVO vo = MediaVO.from(m);
+                    vo.setLikeCount(mediaService.getLikeCount(id));
+                    vo.setLikedByMe(mediaService.isLiked(userId, id));
+                    return ResponseEntity.ok(vo);
+                })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<?> toggleLike(@PathVariable Long id,
+                                        @RequestHeader("Authorization") String authHeader) {
+        Long userId = authUtils.getUserId(authHeader);
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            return ResponseEntity.ok(mediaService.toggleLike(userId, id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiErrorVO(e.getMessage()));
+        }
     }
 
     @PostMapping

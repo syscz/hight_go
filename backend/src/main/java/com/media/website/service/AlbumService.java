@@ -1,5 +1,7 @@
 package com.media.website.service;
 
+import java.util.UUID;
+
 import com.media.website.entity.Album;
 import com.media.website.mapper.AlbumMapper;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +64,37 @@ public class AlbumService {
         }
 
         albumMapper.deleteById(id);
+    }
+
+    /** 生成（或复用）相册分享令牌，仅属主可操作 */
+    public String createShareToken(Long id, Long userId) {
+        Album album = albumMapper.findById(id);
+        if (album == null || !album.getUserId().equals(userId)) {
+            throw new RuntimeException("无权限操作此相册");
+        }
+        String token = album.getShareToken();
+        if (token == null || token.isBlank()) {
+            token = UUID.randomUUID().toString().replace("-", "");
+            albumMapper.updateShareToken(id, token);
+        }
+        return token;
+    }
+
+    /** 关闭相册分享 */
+    public void disableShare(Long id, Long userId) {
+        Album album = albumMapper.findById(id);
+        if (album == null || !album.getUserId().equals(userId)) {
+            throw new RuntimeException("无权限操作此相册");
+        }
+        albumMapper.updateShareToken(id, null);
+    }
+
+    /** 通过令牌取相册（未分享返回空） */
+    public Optional<Album> getAlbumByToken(String token) {
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(albumMapper.findByShareToken(token));
     }
 
     public Album getDefaultAlbum(Long userId) {

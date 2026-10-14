@@ -37,6 +37,10 @@ public class MediaVO {
     private String authorName;
     private String authorAvatar;
 
+    /** 点赞数与当前用户是否已赞（详情/广场等场景填充） */
+    private Long likeCount;
+    private Boolean likedByMe;
+
     public static MediaVO from(Media media) {
         if (media == null) {
             return null;

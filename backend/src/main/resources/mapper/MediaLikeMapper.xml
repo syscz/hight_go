@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.media.website.mapper.MediaLikeMapper">
+
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO media_likes (media_id, user_id)
+        VALUES (#{mediaId}, #{userId})
+    </insert>
+
+    <delete id="deleteByMediaAndUser">
+        DELETE FROM media_likes
+        WHERE media_id = #{mediaId} AND user_id = #{userId}
+    </delete>
+
+    <select id="countByMediaId" resultType="long">
+        SELECT COUNT(*) FROM media_likes WHERE media_id = #{mediaId}
+    </select>
+
+    <select id="existsByMediaAndUser" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM media_likes
+        WHERE media_id = #{mediaId} AND user_id = #{userId}
+    </select>
+
+</mapper>

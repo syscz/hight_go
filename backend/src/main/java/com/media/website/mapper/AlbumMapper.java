@@ -26,4 +26,8 @@ public interface AlbumMapper {
     int incrementMediaCount(@Param("id") Long id);
 
     int decrementMediaCount(@Param("id") Long id);
+
+    int updateShareToken(@Param("id") Long id, @Param("shareToken") String shareToken);
+
+    Album findByShareToken(@Param("shareToken") String shareToken);
 }

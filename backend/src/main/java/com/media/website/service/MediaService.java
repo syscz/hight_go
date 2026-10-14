@@ -3,6 +3,7 @@ package com.media.website.service;
 import com.media.website.entity.Media;
 import com.media.website.entity.User;
 import com.media.website.mapper.MediaMapper;
+import com.media.website.mapper.MediaLikeMapper;
 import com.media.website.mapper.TagMapper;
 import com.media.website.mapper.UserMapper;
 import com.media.website.vo.MediaVO;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,6 +34,7 @@ public class MediaService {
     private final FileUploadService fileUploadService;
     private final TagMapper tagMapper;
     private final VideoTranscodeService videoTranscodeService;
+    private final MediaLikeMapper mediaLikeMapper;
 
     /** 每用户存储配额：累计原始文件总量（默认 2GB）与媒体数量上限（默认 500 项） */
     @Value("${auth.quota.max-total-bytes:2147483648}")
@@ -129,6 +132,34 @@ public class MediaService {
 
     public void incrementViewCount(Long id) {
         mediaMapper.incrementViewCount(id);
+    }
+
+    /** 点赞/取消点赞（仅属主或公开媒体可赞），返回最新计数与状态 */
+    public Map<String, Object> toggleLike(Long userId, Long mediaId) {
+        getVisibleMedia(userId, mediaId).orElseThrow(() -> new IllegalArgumentException("媒体不存在"));
+        boolean liked = mediaLikeMapper.existsByMediaAndUser(mediaId, userId);
+        if (liked) {
+            mediaLikeMapper.deleteByMediaAndUser(mediaId, userId);
+        } else {
+            mediaLikeMapper.insertIgnore(mediaId, userId);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("liked", !liked);
+        result.put("likeCount", mediaLikeMapper.countByMediaId(mediaId));
+        return result;
+    }
+
+    public long getLikeCount(Long mediaId) {
+        return mediaLikeMapper.countByMediaId(mediaId);
+    }
+
+    public boolean isLiked(Long userId, Long mediaId) {
+        return userId != null && mediaLikeMapper.existsByMediaAndUser(mediaId, userId);
+    }
+
+    /** 相册内全部媒体（分享页） */
+    public List<Media> getMediaByAlbumId(Long albumId) {
+        return mediaMapper.findByAlbumId(albumId);
     }
 
     public void setMediaTags(Long userId, Long mediaId, java.util.List<Long> tagIds) {

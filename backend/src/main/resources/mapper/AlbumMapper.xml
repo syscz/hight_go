@@ -10,12 +10,13 @@
         <result property="coverImage" column="computed_cover_image"/>
         <result property="mediaCount" column="computed_media_count"/>
         <result property="userId" column="user_id"/>
+        <result property="shareToken" column="share_token"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="albumColumns">
-        a.id, a.name, a.description, a.user_id, a.created_at, a.updated_at,
+        a.id, a.name, a.description, a.user_id, a.share_token, a.created_at, a.updated_at,
         (SELECT COUNT(*) FROM media m
          WHERE m.album_id = a.id AND m.is_deleted = FALSE) AS computed_media_count,
         (SELECT m.cover_image FROM media m
@@ -78,5 +79,15 @@
         SET media_count = GREATEST(COALESCE(media_count, 0) - 1, 0), updated_at = NOW()
         WHERE id = #{id}
     </update>
+
+    <update id="updateShareToken">
+        UPDATE albums
+        SET share_token = #{shareToken}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="findByShareToken" resultMap="albumMap">
+        SELECT * FROM albums WHERE share_token = #{shareToken}
+    </select>
 
 </mapper>

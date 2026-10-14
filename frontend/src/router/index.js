@@ -65,6 +65,12 @@ const routes = [
     name: 'PublicGallery',
     component: () => import('../views/PublicGallery.vue'),
     meta: { layout: 'square' }
+  },
+  {
+    path: '/s/:token',
+    name: 'ShareAlbum',
+    component: () => import('../views/ShareAlbum.vue'),
+    meta: { layout: 'square' }
   }
 ]
 
