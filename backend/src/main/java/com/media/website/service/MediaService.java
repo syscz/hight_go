@@ -1,8 +1,10 @@
 package com.media.website.service;
 
 import com.media.website.entity.Media;
+import com.media.website.entity.User;
 import com.media.website.mapper.MediaMapper;
 import com.media.website.mapper.TagMapper;
+import com.media.website.mapper.UserMapper;
 import com.media.website.vo.MediaVO;
 import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
@@ -36,6 +38,11 @@ public class MediaService {
     private long quotaTotalBytes;
     @Value("${auth.quota.max-count:500}")
     private int quotaMaxCount;
+    /** 配额切换时间：该时间之前注册的老用户不受配额限制 */
+    @Value("${auth.quota.apply-after:2026-10-14T00:00:00}")
+    private String quotaApplyAfter;
+
+    private final UserMapper userMapper;
 
     public List<Media> getMediaList(Long userId, Media.MediaType type, Long categoryId, Long albumId,
                                     String keyword, Boolean favorite, Boolean deleted, Long tagId) {
@@ -300,8 +307,19 @@ public class MediaService {
         }
     }
 
-    /** 上传前的每用户配额校验：回收站中的文件按“未入回收站统计”口径计算，避免用户视角困惑 */
+    /** 上传前的每用户配额校验：切换时间前注册的老用户豁免；回收站中的文件不计入统计 */
     private void checkStorageQuota(Long userId, long incomingBytes) {
+        User user = userMapper.findById(userId);
+        if (user != null && user.getCreatedAt() != null) {
+            try {
+                LocalDateTime cutoff = LocalDateTime.parse(quotaApplyAfter);
+                if (user.getCreatedAt().isBefore(cutoff)) {
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("配额切换时间格式错误: {}", quotaApplyAfter);
+            }
+        }
         Long used = mediaMapper.getTotalFileSizeByUserId(userId);
         if (used != null && used + incomingBytes > quotaTotalBytes) {
             long limitMb = quotaTotalBytes / 1024 / 1024;

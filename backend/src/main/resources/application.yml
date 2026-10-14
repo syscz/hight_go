@@ -41,3 +41,5 @@ auth:
   quota:
     max-total-bytes: ${AUTH_QUOTA_MAX_TOTAL_BYTES:2147483648}   # 每用户存储上限 2GB
     max-count: ${AUTH_QUOTA_MAX_COUNT:500}                      # 每用户媒体数量上限
+    # 配额切换时间：此前注册的老用户不受配额限制（生产如需调整用环境变量 AUTH_QUOTA_APPLY_AFTER 覆盖）
+    apply-after: ${AUTH_QUOTA_APPLY_AFTER:2026-10-14T00:00:00}
