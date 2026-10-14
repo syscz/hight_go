@@ -42,6 +42,12 @@ public class MediaController {
         return ResponseEntity.ok(vo);
     }
 
+    @GetMapping("/public/random")
+    public ResponseEntity<List<MediaVO>> getRandomPublicMedia(
+            @RequestParam(required = false, defaultValue = "100") Integer limit) {
+        return ResponseEntity.ok(mediaService.getRandomPublicMedia(limit));
+    }
+
     @PutMapping("/{id}/public")
     public ResponseEntity<?> setMediaPublic(@PathVariable Long id,
                                             @Valid @RequestBody MediaPublicRequestDto request,

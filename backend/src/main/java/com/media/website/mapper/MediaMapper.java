@@ -1,6 +1,7 @@
 package com.media.website.mapper;
 
 import com.media.website.entity.Media;
+import com.media.website.vo.MediaVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -61,6 +62,9 @@ public interface MediaMapper {
 
     int updateVideoMp4Path(@Param("id") Long id, @Param("videoMp4Path") String videoMp4Path);
 
+    int updateCoverAndDuration(@Param("id") Long id, @Param("coverImage") String coverImage,
+                               @Param("duration") Integer duration);
+
     int batchUpdateTitle(@Param("ids") List<Long> ids, @Param("userId") Long userId,
                          @Param("title") String title, @Param("description") String description);
 
@@ -69,6 +73,9 @@ public interface MediaMapper {
     List<Media> findPublic(@Param("offset") int offset, @Param("size") int size);
 
     long countPublic();
+
+    /** 随机取公开媒体（含作者昵称/头像），供公开广场使用 */
+    List<MediaVO> findRandomPublic(@Param("limit") int limit);
 
     int updateIsPublic(@Param("id") Long id, @Param("isPublic") boolean isPublic);
 

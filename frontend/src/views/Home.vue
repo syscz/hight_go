@@ -1,49 +1,36 @@
 <template>
   <div class="home">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <el-radio-group v-model="viewMode" size="large" class="view-mode-group">
-          <el-radio-button label="albums">
-            <span class="radio-label">📁</span> 相册
-          </el-radio-button>
-          <el-radio-button label="all">
-            <span class="radio-label">📋</span> 全部
-          </el-radio-button>
-          <el-radio-button label="images">
-            <span class="radio-label">🖼️</span> 图片
-          </el-radio-button>
-          <el-radio-button label="videos">
-            <span class="radio-label">🎬</span> 视频
-          </el-radio-button>
+    <ProfileHeader :stats="profileStats" />
+
+    <nav class="space-tabs">
+      <button class="tab-btn" :class="{ active: tab === 'all' }" @click="tab = 'all'">
+        <span class="tab-icon">▦</span>全部
+      </button>
+      <button class="tab-btn" :class="{ active: tab === 'albums' }" @click="tab = 'albums'">
+        <span class="tab-icon">📁</span>相册
+      </button>
+    </nav>
+
+    <!-- 全部：Instagram 网格 -->
+    <template v-if="tab === 'all'">
+      <div class="space-toolbar">
+        <el-radio-group v-model="typeFilter" size="small" class="type-chips" @change="handleFilterChange">
+          <el-radio-button label="">全部</el-radio-button>
+          <el-radio-button label="image">🖼 图片</el-radio-button>
+          <el-radio-button label="video">🎬 视频</el-radio-button>
         </el-radio-group>
-      </div>
-      <div class="toolbar-right">
-        <div class="search-box">
-          <el-button type="primary" round @click="showCreateAlbumDialog" class="new-btn">
-            ➕ 新建
-          </el-button>
-          <div class="view-layout-toggle">
-            <el-radio-group v-model="viewLayout" size="large">
-              <el-radio-button label="grid">▦</el-radio-button>
-              <el-radio-button label="list">☰</el-radio-button>
-            </el-radio-group>
-          </div>
+        <div class="toolbar-right">
           <el-select
             v-model="selectedTagId"
-            placeholder="标签筛选"
+            placeholder="标签"
             clearable
-            size="large"
+            size="small"
             class="tag-filter"
-            @change="handleTagChange"
+            @change="handleFilterChange"
           >
-            <el-option
-              v-for="tag in tags"
-              :key="tag.id"
-              :label="tag.name"
-              :value="tag.id"
-            />
+            <el-option v-for="t in tags" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
-          <el-select v-model="sortBy" size="large" class="sort-select" @change="handleSortChange">
+          <el-select v-model="sortBy" size="small" class="sort-select" @change="handleFilterChange">
             <el-option label="最新" value="latest" />
             <el-option label="最旧" value="oldest" />
             <el-option label="名称" value="name" />
@@ -53,99 +40,94 @@
             v-model="searchKeyword"
             placeholder="搜索标题/描述..."
             clearable
+            size="small"
             class="search-input"
             @keyup.enter="handleSearch"
           >
-            <template #prefix>
-              <span class="search-icon">🔍</span>
-            </template>
+            <template #prefix>🔍</template>
           </el-input>
-          <el-button type="primary" class="search-btn" @click="handleSearch">
-            搜索
-          </el-button>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <div v-if="viewMode === 'albums'">
-        <div v-loading="loading" class="albums-grid">
-          <div
-            v-for="(album, index) in albums"
-            :key="album.id"
-            class="album-item"
-            :class="[`album-item--color-${index % 5}`, { 'has-cover': album.coverImage }]"
-            @click="viewAlbum(album.id)"
-          >
-            <div v-if="album.coverImage" class="album-cover">
-              <img :src="getCoverUrl(album)" :alt="album.name" loading="lazy" />
-            </div>
-            <div v-else class="album-icon">📁</div>
-            <div class="album-name">{{ album.name }}</div>
-            <div class="album-count">🎨 {{ album.mediaCount || 0 }} 个作品</div>
-            <el-button
-              v-if="album.name !== '默认相册'"
-              type="danger"
-              :icon="Delete"
-              circle
-              size="small"
-              class="delete-btn"
-              @click.stop="handleDeleteAlbum(album.id)"
-            />
-          </div>
         </div>
       </div>
 
-      <div v-else>
-        <div v-if="loading" class="media-grid skeleton-grid">
-          <div v-for="n in 8" :key="n" class="media-item skeleton-item">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item variant="image" style="width: 100%; height: 180px" />
-                <el-skeleton-item variant="text" style="width: 60%; margin-top: 8px" />
-              </template>
-            </el-skeleton>
-          </div>
+      <div v-if="initialLoading" class="ig-grid">
+        <div v-for="n in 9" :key="n" class="ig-skeleton">
+          <el-skeleton animated>
+            <template #template>
+              <el-skeleton-item variant="image" style="width: 100%; aspect-ratio: 1" />
+            </template>
+          </el-skeleton>
         </div>
-        <div v-else v-loading="loading" class="media-grid" :class="{ 'list-mode': viewLayout === 'list' }">
-          <div
-            v-for="(item, index) in mediaList"
+      </div>
+
+      <template v-else>
+        <div v-if="mediaList.length" class="ig-grid">
+          <IgMediaTile
+            v-for="item in mediaList"
             :key="item.id"
-            class="media-item"
-            :class="{ selected: selectedMedia.includes(item.id) }"
-            @click="openLightbox(index)"
-            @click.meta="toggleSelect(item.id, $event)"
-          >
-            <input
-              type="checkbox"
-              :checked="selectedMedia.includes(item.id)"
-              @click.stop
-              @change="toggleSelect(item.id)"
-              class="media-checkbox"
-            />
-            <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" loading="lazy" v-img-fade />
-            <video v-else :src="getCoverUrl(item)" />
-            <div class="media-overlay">
-              <span class="media-title">{{ item.title || item.filename }}</span>
-            </div>
-            <button
-              class="favorite-btn"
-              :class="{ active: item.isFavorite }"
-              @click.stop="toggleFavorite(item)"
-            >
-              {{ item.isFavorite ? '♥' : '♡' }}
-            </button>
-          </div>
+            :item="item"
+            :selected="selectedMedia.includes(item.id)"
+            @open="openLightbox"
+            @select="toggleSelect"
+          />
         </div>
-        <div v-if="!loading && mediaList.length === 0" class="empty-state">
-          <div class="empty-icon">🔍</div>
-          <p>没有找到内容</p>
-        </div>
-        <div v-if="hasMore && !loading" ref="sentinel" class="scroll-sentinel">
+
+        <EmptyState
+          v-if="mediaList.length === 0"
+            icon="🔍"
+            title="还没有内容"
+            hint="上传一些照片或视频，你的空间会立刻热闹起来"
+            cta-text="去上传"
+            @cta="router.push('/upload')"
+        />
+
+        <div v-if="hasMore && !loadingMore" ref="sentinel" class="scroll-sentinel">
           <span>加载中…</span>
         </div>
+      </template>
+    </template>
+
+    <!-- 相册 -->
+    <template v-else>
+      <div class="albums-head">
+        <span class="albums-count">共 {{ albums.length }} 个相册</span>
+        <el-button type="primary" round size="small" @click="showCreateAlbumDialog">
+          ➕ 新建相册
+        </el-button>
       </div>
-    </div>
+      <div v-loading="loading" class="albums-grid">
+        <div
+          v-for="(album, index) in albums"
+          :key="album.id"
+          class="album-item"
+          :class="[`album-item--color-${index % 5}`, { 'has-cover': album.coverImage }]"
+          @click="viewAlbum(album.id)"
+        >
+          <div v-if="album.coverImage" class="album-cover">
+            <img :src="resolveMediaUrl(album.coverImage)" :alt="album.name" loading="lazy" />
+          </div>
+          <div v-else class="album-icon">📁</div>
+          <div class="album-name">{{ album.name }}</div>
+          <div class="album-count">🎨 {{ album.mediaCount || 0 }} 个作品</div>
+          <el-button
+            v-if="album.name !== '默认相册'"
+            type="danger"
+            :icon="Delete"
+            circle
+            size="small"
+            class="delete-btn"
+            @click.stop="handleDeleteAlbum(album.id)"
+          />
+        </div>
+      </div>
+      <EmptyState
+        v-if="!loading && albums.length === 0"
+        icon="📁"
+        title="还没有相册"
+        hint="创建一个相册，把照片和视频整理起来"
+        cta-text="新建相册"
+        @cta="showCreateAlbumDialog"
+      />
+    </template>
 
     <transition name="fade">
       <div v-if="selectedMedia.length > 0" class="floating-actions">
@@ -161,20 +143,10 @@
     <el-dialog v-model="createAlbumDialogVisible" title="创建新相册" width="360px" round align-center>
       <el-form @submit.prevent="handleCreateAlbum">
         <el-form-item>
-          <el-input
-            v-model="newAlbumName"
-            placeholder="给相册起个名字~"
-            autofocus
-            size="large"
-          />
+          <el-input v-model="newAlbumName" placeholder="给相册起个名字~" autofocus size="large" />
         </el-form-item>
         <el-form-item>
-          <el-input
-            v-model="newAlbumDesc"
-            type="textarea"
-            placeholder="相册描述（选填）"
-            rows="2"
-          />
+          <el-input v-model="newAlbumDesc" type="textarea" placeholder="相册描述（选填）" rows="2" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -185,12 +157,7 @@
 
     <el-dialog v-model="moveDialogVisible" title="移动到相册" width="360px">
       <el-select v-model="targetAlbumId" placeholder="选择目标相册" style="width: 100%">
-        <el-option
-          v-for="album in albums"
-          :key="album.id"
-          :label="album.name"
-          :value="album.id"
-        />
+        <el-option v-for="album in albums" :key="album.id" :label="album.name" :value="album.id" />
       </el-select>
       <template #footer>
         <el-button @click="moveDialogVisible = false">取消</el-button>
@@ -233,7 +200,11 @@ import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
 import api from '@/api/index'
+import { resolveMediaUrl } from '@/utils/media'
 import MediaLightbox from '../components/MediaLightbox.vue'
+import IgMediaTile from '@/components/IgMediaTile.vue'
+import ProfileHeader from '@/components/ProfileHeader.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -241,18 +212,22 @@ const mediaStore = useMediaStore()
 
 const albums = computed(() => mediaStore.albums)
 const loading = computed(() => mediaStore.loading)
+const tags = computed(() => mediaStore.tags)
 
-const viewMode = ref('albums')
+/** 全部 / 相册 Tab */
+const tab = ref('all')
+/** 全部 Tab 内的类型筛选（空 = 不限） */
+const typeFilter = ref('')
+
 const searchKeyword = ref('')
 const mediaList = ref([])
+const initialLoading = ref(true)
+const loadingMore = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(24)
 const totalMedia = ref(0)
 const selectedTagId = ref(null)
 const sortBy = ref('latest')
-const viewLayout = ref('grid')
-const stats = ref(null)
-const animatedStats = ref(null)
 const selectedMedia = ref([])
 const moveDialogVisible = ref(false)
 const targetAlbumId = ref(null)
@@ -262,29 +237,25 @@ const lightboxVisible = ref(false)
 const lightboxIndex = ref(0)
 const sentinel = ref(null)
 let observer = null
-const tags = computed(() => mediaStore.tags)
 let searchDebounce = null
+
+const statsVO = ref({ totalMedia: 0, favoriteCount: 0 })
+
+const profileStats = computed(() => ({
+  posts: statsVO.value.totalMedia || 0,
+  albums: albums.value.length,
+  favorites: statsVO.value.favoriteCount || 0
+}))
 
 watch(searchKeyword, () => {
   clearTimeout(searchDebounce)
   searchDebounce = setTimeout(() => {
-    if (viewMode.value !== 'albums') {
+    if (tab.value === 'all') {
       currentPage.value = 1
       fetchMediaList()
     }
   }, 400)
 })
-
-const animateNumber = (from, to, duration, onUpdate) => {
-  const start = performance.now()
-  const tick = (now) => {
-    const progress = Math.min((now - start) / duration, 1)
-    const eased = 1 - Math.pow(1 - progress, 3)
-    onUpdate(Math.round(from + (to - from) * eased))
-    if (progress < 1) requestAnimationFrame(tick)
-  }
-  requestAnimationFrame(tick)
-}
 
 const createAlbumDialogVisible = ref(false)
 const newAlbumName = ref('')
@@ -292,6 +263,15 @@ const newAlbumDesc = ref('')
 
 const fetchAlbums = async () => {
   await mediaStore.fetchAlbums()
+}
+
+const fetchStats = async () => {
+  try {
+    const response = await api.get('/media/stats')
+    statsVO.value = response.data || {}
+  } catch (error) {
+    console.error('获取统计失败', error)
+  }
 }
 
 const viewAlbum = (albumId) => {
@@ -339,27 +319,12 @@ const handleDeleteAlbum = async (albumId) => {
   }
 }
 
-const fetchStats = async () => {
-  try {
-    const response = await api.get('/media/stats')
-    stats.value = response.data
-    if (stats.value.totalMedia != null) {
-      animateNumber(0, stats.value.totalMedia, 900, (value) => {
-        if (!animatedStats.value) animatedStats.value = {}
-        animatedStats.value.totalMedia = value
-      })
-    }
-  } catch (error) {
-    console.error('获取统计失败', error)
-  }
-}
-
 const fetchMediaList = async (append = false) => {
+  if (append) loadingMore.value = true
   try {
     const params = { page: currentPage.value, size: pageSize.value }
     if (searchKeyword.value) params.keyword = searchKeyword.value
-    if (viewMode.value === 'images') params.type = 'image'
-    if (viewMode.value === 'videos') params.type = 'video'
+    if (typeFilter.value) params.type = typeFilter.value
     if (selectedTagId.value) params.tagId = selectedTagId.value
     if (sortBy.value !== 'latest') {
       params.sort = sortBy.value === 'oldest' ? 'created_asc' : sortBy.value
@@ -376,13 +341,16 @@ const fetchMediaList = async (append = false) => {
     totalMedia.value = total
   } catch (error) {
     ElMessage.error('获取媒体列表失败')
+  } finally {
+    initialLoading.value = false
+    loadingMore.value = false
   }
 }
 
 const hasMore = computed(() => mediaList.value.length < totalMedia.value)
 
 const loadMore = () => {
-  if (loading.value || !hasMore.value) return
+  if (loadingMore.value || !hasMore.value) return
   currentPage.value += 1
   fetchMediaList(true)
 }
@@ -390,70 +358,37 @@ const loadMore = () => {
 const handleSearch = () => {
   clearTimeout(searchDebounce)
   currentPage.value = 1
-  viewMode.value = 'all'
+  if (tab.value !== 'all') tab.value = 'all'
+  else fetchMediaList()
 }
 
-const handleTagChange = () => {
+const handleFilterChange = () => {
   currentPage.value = 1
   fetchMediaList()
 }
 
-const handleSortChange = () => {
+const openLightbox = (item) => {
+  const idx = mediaList.value.findIndex(m => m.id === item.id)
+  if (idx >= 0) {
+    lightboxIndex.value = idx
+    lightboxVisible.value = true
+  }
+}
+
+watch(tab, (mode) => {
   currentPage.value = 1
-  fetchMediaList()
-}
-
-const getCoverUrl = (item) => {
-  if (!item.coverImage) return ''
-  if (item.coverImage.startsWith('http')) return item.coverImage
-  return 'http://47.97.191.168' + (item.coverImage.startsWith('/') ? '' : '/') + item.coverImage
-}
-
-const goToDetail = (id) => {
-  router.push({
-    path: `/media/${id}`,
-    query: {
-      from: 'home',
-      viewMode: viewMode.value,
-      keyword: searchKeyword.value
-    }
-  })
-}
-
-const openLightbox = (index) => {
-  lightboxIndex.value = index
-  lightboxVisible.value = true
-}
-
-watch(viewMode, (mode) => {
-  currentPage.value = 1
-  if (mode !== 'albums') {
+  if (mode === 'all') {
     fetchMediaList()
+  } else {
+    fetchAlbums()
   }
 })
 
-const toggleFavorite = async (item) => {
-  try {
-    await api.post(`/media/${item.id}/favorite`)
-    fetchMediaList()
-  } catch (error) {
-    ElMessage.error('操作失败')
-  }
-}
-
-const toggleSelect = (id, event) => {
-  if (event && event.metaKey) {
-    if (selectedMedia.value.includes(id)) {
-      selectedMedia.value = selectedMedia.value.filter(i => i !== id)
-    } else {
-      selectedMedia.value.push(id)
-    }
+const toggleSelect = (id) => {
+  if (selectedMedia.value.includes(id)) {
+    selectedMedia.value = selectedMedia.value.filter(i => i !== id)
   } else {
-    if (selectedMedia.value.includes(id)) {
-      selectedMedia.value = selectedMedia.value.filter(i => i !== id)
-    } else {
-      selectedMedia.value.push(id)
-    }
+    selectedMedia.value.push(id)
   }
 }
 
@@ -527,28 +462,23 @@ const batchDelete = async () => {
     ElMessage.success('已移入回收站')
     selectedMedia.value = []
     fetchMediaList()
+    fetchStats()
   } catch (error) {
     if (error !== 'cancel') ElMessage.error('操作失败')
   }
 }
 
-const formatSize = (bytes) => {
-  if (!bytes) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
 onMounted(() => {
   const q = route.query
-  if (q.viewMode) viewMode.value = q.viewMode
+  if (q.tab === 'albums' || q.viewMode === 'albums') tab.value = 'albums'
   if (q.keyword) searchKeyword.value = q.keyword
   fetchAlbums()
-  fetchStats()
   mediaStore.fetchTags()
-  if (viewMode.value !== 'albums') {
+  fetchStats()
+  if (tab.value === 'all') {
     fetchMediaList()
+  } else {
+    initialLoading.value = false
   }
   observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting) {
@@ -571,50 +501,136 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .home {
-  min-height: 100vh;
-  background: transparent;
+  max-width: 1010px;
+  margin: 0 auto;
   position: relative;
 }
 
-.page-head {
-  position: relative;
-  z-index: 1;
+/* ===== IG 式 Tab ===== */
+.space-tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.5rem 1rem;
-  margin: 0 2.5rem;
-  border-bottom: 1px solid var(--glass-border);
+  justify-content: center;
+  gap: 3.5rem;
+  border-top: 1px solid var(--glass-border);
+  margin-top: 1.4rem;
 
-  .page-head-left {
-    h1 {
-      margin: 0;
-      font-size: 1.45rem;
-      font-weight: 700;
-      color: var(--text-primary);
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 0.9rem 0.25rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    margin-bottom: -1px;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+
+    .tab-icon {
+      font-size: 1rem;
     }
 
-    p {
-      margin: 0.15rem 0 0;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+    &:hover {
+      color: var(--text-secondary);
+    }
+
+    &.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--text-primary);
     }
   }
 }
 
-.container {
-  position: relative;
-  z-index: 1;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0.75rem 2.5rem 3rem;
-  background: transparent;
+/* ===== 工具行（低调收进一行） ===== */
+.space-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0;
+  margin-bottom: 0.4rem;
+
+  .type-chips {
+    :deep(.el-radio-button__inner) {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      font-weight: 500;
+      padding: 0.38rem 0.85rem;
+      transition: all 0.2s ease;
+      box-shadow: none;
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+
+    :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+      background: rgba(79, 195, 247, 0.16);
+      border-color: #4fc3f7;
+      color: #4fc3f7;
+    }
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    .tag-filter {
+      width: 110px;
+    }
+
+    .sort-select {
+      width: 90px;
+    }
+
+    .search-input {
+      width: 200px;
+    }
+  }
+}
+
+/* ===== IG 网格 ===== */
+.ig-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.ig-skeleton {
+  :deep(.el-skeleton) {
+    width: 100%;
+  }
+}
+
+/* ===== 相册 ===== */
+.albums-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.25rem 0.9rem;
+
+  .albums-count {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+  }
 }
 
 .albums-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 1.5rem;
+  min-height: 120px;
 }
 
 .album-item {
@@ -629,8 +645,6 @@ onBeforeUnmount(() => {
 
   &:hover {
     transform: translateY(-3px);
-    background: none;
-    box-shadow: none;
   }
 
   .album-cover {
@@ -711,28 +725,6 @@ onBeforeUnmount(() => {
   &--color-4 { border-top: 4px solid #ce93d8; }
 }
 
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-
-  .empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    color: var(--text-secondary);
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-hint {
-    font-size: 0.95rem;
-    color: var(--text-muted);
-  }
-}
-
 .scroll-sentinel {
   display: flex;
   justify-content: center;
@@ -772,529 +764,27 @@ onBeforeUnmount(() => {
     flex-wrap: wrap;
     justify-content: center;
   }
-}
 
-.toolbar {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.6rem 1rem;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  margin: 0.5rem 2.5rem 0;
-  border-radius: 12px;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--glass-border);
+  .space-tabs {
+    gap: 2rem;
 
-  .toolbar-left {
-    .view-mode-group {
-      :deep(.el-radio-button__inner) {
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 500;
-        padding: 0.6rem 1.2rem;
-        border-radius: 8px;
-        margin-right: 0.5rem;
-        transition: all 0.2s ease;
-        box-shadow: none;
-
-        .radio-label {
-          margin-right: 0.3rem;
-        }
-
-        &:hover {
-          color: white;
-          border-color: rgba(255, 255, 255, 0.5);
-          background: rgba(255, 255, 255, 0.1);
-        }
-      }
-
-      :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-        background: rgba(129, 212, 250, 0.4);
-        border-color: #81d4fa;
-        color: white;
-        box-shadow: 0 2px 8px rgba(129, 212, 250, 0.3);
-      }
-
-      :deep(.el-radio-button:first-child .el-radio-button__inner) {
-        border-radius: 8px;
-      }
-
-      :deep(.el-radio-button:last-child .el-radio-button__inner) {
-        border-radius: 8px;
-      }
+    .tab-btn {
+      font-size: 0.82rem;
+      gap: 0.35rem;
+      padding: 0.75rem 0.15rem;
     }
   }
 
-  .toolbar-right {
-    .search-box {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-
-      .tag-filter {
-        width: 140px;
-      }
-
-      .sort-select {
-        width: 100px;
-      }
-
-      .view-layout-toggle {
-        :deep(.el-radio-button__inner) {
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          color: rgba(255, 255, 255, 0.85);
-          padding: 0.6rem 0.9rem;
-          font-size: 1rem;
-        }
-
-        :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-          background: rgba(129, 212, 250, 0.4);
-          border-color: #81d4fa;
-          color: white;
-        }
-      }
-
-      .search-input {
-        width: 240px;
-
-        :deep(.el-input__wrapper) {
-          border-radius: 10px;
-          padding: 4px 12px;
-          background: rgba(255, 255, 255, 0.1);
-          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
-          transition: all 0.2s ease;
-
-          &:hover {
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.15);
-          }
-
-          &.is-focus {
-            box-shadow: 0 0 0 2px #81d4fa;
-            background: rgba(255, 255, 255, 0.2);
-          }
-        }
-
-        :deep(.el-input__inner) {
-          color: white;
-          &::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-          }
-        }
-
-        .search-icon {
-          font-size: 1rem;
-        }
-      }
-
-      .search-btn {
-        background: rgba(129, 212, 250, 0.4);
-        border: 1px solid #81d4fa;
-        color: white;
-        border-radius: 10px;
-        padding: 0.6rem 1.2rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(129, 212, 250, 0.25);
-
-        &:hover {
-          background: rgba(129, 212, 250, 0.5);
-          transform: translateY(-1px);
-        }
-
-        &:active {
-          transform: translateY(0);
-        }
-      }
-    }
-  }
-}
-
-.stats-bar {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 1.5rem;
-  padding: 0.6rem 1.5rem;
-  margin: 0.5rem 2.5rem 0.75rem;
-  background: var(--glass);
-  backdrop-filter: blur(10px);
-  border-radius: 10px;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--glass-border);
-
-  span {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-}
-
-.media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.45rem;
-  margin-top: 0.5rem;
-
-  &.list-mode {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-
-    .media-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      aspect-ratio: auto;
-
-      img,
-      video {
-        width: 120px;
-        height: 90px;
-        flex-shrink: 0;
-        border-radius: 8px;
-        object-fit: cover;
-      }
-
-      .media-checkbox {
-        position: static;
-        flex-shrink: 0;
-      }
-
-      .media-overlay {
-        position: static;
-        background: none;
-        padding: 0;
-        flex: 1;
-
-        .media-title {
-          color: #333;
-          font-size: 0.9rem;
-          white-space: normal;
-        }
-      }
-
-      .favorite-btn {
-        position: static;
-        margin-left: auto;
-        flex-shrink: 0;
-      }
-    }
-  }
-}
-
-.media-item {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 4px;
-  overflow: hidden;
-  cursor: pointer;
-  background: var(--glass);
-  transition: all 0.2s;
-
-  &.selected {
-    outline: 2px solid #4fc3f7;
-  }
-
-  img, video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  img {
-    transition: transform 0.35s ease;
-  }
-
-  &:hover img {
-    transform: scale(1.05);
-  }
-
-  .media-checkbox {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    z-index: 2;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  @media (max-width: 768px) {
-    .media-checkbox {
-      opacity: 1;
-    }
-  }
-
-  .media-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.7));
-    padding: 1.5rem 0.5rem 0.5rem;
-    .media-title {
-      color: white;
-      font-size: 0.85rem;
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-
-  .favorite-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(0,0,0,0.3);
-    border: none;
-    color: white;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity 0.2s;
-
-    &.active {
-      color: #ff6b6b;
-    }
-  }
-
-  &:hover .media-checkbox,
-  &.selected .media-checkbox,
-  &:hover .favorite-btn,
-  &.selected .favorite-btn {
-    opacity: 1;
-  }
-}
-
-.batch-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  span {
-    color: var(--text-primary);
-    font-weight: 500;
-  }
-}
-
-.skeleton-grid {
-  .media-item {
-    padding: 0.65rem;
-    margin-bottom: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .hero-header {
-    padding: 3.5rem 1rem 2.5rem;
-
-    .hero-title {
-      font-size: 2.2rem;
-    }
-
-    .hero-subtitle {
-      font-size: 0.95rem;
-      letter-spacing: 2px;
-    }
-
-    .hero-action {
-      margin-top: 1.5rem;
-    }
-  }
-
-  .toolbar {
-    flex-direction: column;
-    gap: 1rem;
-    margin: 0.75rem 1rem;
-    padding: 0.75rem 1rem;
-
-    .toolbar-left {
-      .view-mode-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        justify-content: center;
-
-        :deep(.el-radio-button__inner) {
-          padding: 0.4rem 0.75rem;
-          font-size: 0.8rem;
-          margin-right: 0;
-        }
-      }
-    }
-
+  .space-toolbar {
     .toolbar-right {
-      width: 100%;
-
-      .search-box {
-        flex-direction: column;
+      .search-input {
         width: 100%;
-
-        .tag-filter {
-          width: 100%;
-        }
-
-        .sort-select {
-          width: 100%;
-        }
-
-        .view-layout-toggle {
-          :deep(.el-radio-button__inner) {
-            padding: 0.4rem 0.75rem;
-          }
-        }
-
-        .search-input {
-          width: 100%;
-
-          :deep(.el-input__wrapper) {
-            width: 100%;
-          }
-        }
-
-        .search-btn {
-          width: 100%;
-          margin-top: 0.5rem;
-        }
       }
     }
   }
 
-  .stats-bar {
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin: 0 1rem 0.75rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.8rem;
-    justify-content: center;
-  }
-
-  .container {
-    padding: 0.75rem 1rem 2rem;
-    margin: 0 1rem;
-  }
-
-  .albums-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .album-item {
-    padding: 1rem 0.75rem;
-
-    .album-icon {
-      font-size: 1.75rem;
-    }
-
-    .album-name {
-      font-size: 0.85rem;
-    }
-
-    .album-count {
-      font-size: 0.75rem;
-    }
-  }
-
-  .media-grid {
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-    gap: 0.3rem;
-  }
-
-  .batch-actions {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    justify-content: center;
-  }
-}
-
-:deep(.el-dialog) {
-  border-radius: 20px;
-  background: rgba(18, 25, 35, 0.96);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-card);
-
-  .el-dialog__header {
-    background: linear-gradient(135deg, rgba(79, 195, 247, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%);
-    border-bottom: 1px solid rgba(129, 212, 250, 0.3);
-    border-radius: 20px 20px 0 0;
-    margin-right: 0;
-    padding: 1.25rem 1.5rem;
-
-    .el-dialog__title {
-      color: var(--text-primary);
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-  }
-
-  .el-dialog__body {
-    padding: 1.5rem;
-  }
-
-  .el-dialog__footer {
-    padding: 1rem 1.5rem;
-  }
-
-  .el-button--primary {
-    background: linear-gradient(135deg, #81d4fa 0%, #4fc3f7 100%);
-    border: none;
-    font-weight: 600;
-
-    &:hover {
-      opacity: 0.9;
-    }
-  }
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: 12px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 0 0 1px rgba(129, 212, 250, 0.3);
-
-  &:hover {
-    box-shadow: 0 0 0 1px rgba(129, 212, 250, 0.6);
-  }
-
-  &.is-focus {
-    box-shadow: 0 0 0 2px #4fc3f7;
-  }
-}
-
-:deep(.el-textarea__inner) {
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text-primary);
-  box-shadow: 0 0 0 1px rgba(129, 212, 250, 0.3);
-
-  &:hover {
-    box-shadow: 0 0 0 1px rgba(129, 212, 250, 0.6);
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 2px #4fc3f7;
+  .ig-grid {
+    gap: 2px;
   }
 }
 </style>

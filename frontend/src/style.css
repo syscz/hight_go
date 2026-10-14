@@ -10,6 +10,7 @@
 
   /* 深色沉浸式设计系统 */
   --bg-base: #0a0e14;
+  --bg-translucent: rgba(10, 14, 20, 0.86);
   --bg-elevated: #10151d;
   --glass: rgba(255, 255, 255, 0.055);
   --glass-strong: rgba(255, 255, 255, 0.09);
@@ -88,6 +89,7 @@ body {
 /* 浅色主题 */
 html[data-theme='light'] {
   --bg-base: #eef2f7;
+  --bg-translucent: rgba(238, 242, 247, 0.88);
   --bg-elevated: #ffffff;
   --glass: rgba(255, 255, 255, 0.72);
   --glass-strong: rgba(255, 255, 255, 0.92);

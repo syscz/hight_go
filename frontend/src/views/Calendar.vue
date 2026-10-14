@@ -42,23 +42,14 @@
     <div v-if="selectedDate" class="day-media">
       <h3>{{ selectedDate }} · {{ mediaOfDay(selectedDate).length }} 个媒体</h3>
       <div v-if="mediaOfDay(selectedDate).length" class="media-grid">
-        <div
+        <MediaTile
           v-for="item in mediaOfDay(selectedDate)"
           :key="item.id"
-          class="media-item"
-          @click="goToDetail(item.id)"
-        >
-          <img
-            v-if="item.mediaType === 'image'"
-            :src="getCoverUrl(item)"
-            :alt="item.title"
-            loading="lazy"
-          />
-          <video v-else :src="getCoverUrl(item)" />
-          <div class="media-overlay">
-            <span class="media-title">{{ item.title || item.filename }}</span>
-          </div>
-        </div>
+          :item="item"
+          :selectable="false"
+          :favoritable="false"
+          @open="goToDetail"
+        />
       </div>
       <div v-else class="empty-day">这一天没有媒体</div>
     </div>
@@ -69,6 +60,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api/index'
+import MediaTile from '@/components/MediaTile.vue'
 
 const router = useRouter()
 const timeline = ref({})
@@ -121,14 +113,8 @@ const selectDay = (d) => {
   selectedDate.value = dateKey(d)
 }
 
-const getCoverUrl = (item) => {
-  if (!item.coverImage) return ''
-  if (item.coverImage.startsWith('http')) return item.coverImage
-  return 'http://47.97.191.168' + (item.coverImage.startsWith('/') ? '' : '/') + item.coverImage
-}
-
-const goToDetail = (id) => {
-  router.push(`/media/${id}`)
+const goToDetail = (item) => {
+  router.push(`/media/${item.id}`)
 }
 
 onMounted(() => {
@@ -270,49 +256,6 @@ onMounted(() => {
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.9rem;
-}
-
-.media-item {
-  position: relative;
-  border-radius: 14px;
-  overflow: hidden;
-  cursor: pointer;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  transition: all 0.3s;
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: rgba(79, 195, 247, 0.45);
-    box-shadow: var(--shadow-glow);
-  }
-
-  img,
-  video {
-    width: 100%;
-    height: 130px;
-    object-fit: cover;
-    display: block;
-  }
-
-  .media-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-    padding: 1rem 0.5rem 0.4rem;
-
-    .media-title {
-      color: #fff;
-      font-size: 0.8rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: block;
-    }
-  }
+  gap: 0.45rem;
 }
 </style>

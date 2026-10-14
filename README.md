@@ -103,6 +103,7 @@ SOURCE backend/src/main/resources/db/schema.sql;
 SOURCE backend/src/main/resources/db/migration.sql;
 SOURCE backend/src/main/resources/db/v1.1.sql;
 SOURCE backend/src/main/resources/db/album_schema.sql;
+SOURCE backend/src/main/resources/db/v1.2.sql;
 ```
 
 ### 后端启动
@@ -145,7 +146,13 @@ npm install
 npm run dev
 ```
 
-前端默认运行在 `http://localhost:5173`，已配置开发期 CORS 代理到后端 8081。
+前端默认运行在 `http://localhost:5173`，开发期已配置代理：`/api` 与 `/uploads` 均转发到本地后端 8081。
+
+### 视频封面与时长（可选但推荐）
+
+视频上传后，后端会异步用 ffmpeg 抽取封面帧（480px 宽 JPEG）并写入 `duration`（秒）。
+服务器安装 ffmpeg（含 ffprobe）即可生效；未安装时自动跳过，不影响上传主流程。
+未生成封面的老视频，前端会用 `#t=1` 取帧兜底显示。
 
 ### 默认账号
 

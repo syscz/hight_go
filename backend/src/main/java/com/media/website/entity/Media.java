@@ -35,6 +35,8 @@ public class Media {
 
     private String coverImage;
 
+    private Integer duration;
+
     private Integer viewCount;
 
     private Boolean isFavorite = false;

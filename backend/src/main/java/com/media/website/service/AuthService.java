@@ -77,6 +77,11 @@ public class AuthService {
         MeVO me = new MeVO();
         me.setId(jwtService.getUserIdFromToken(token));
         me.setUsername(jwtService.getUsernameFromToken(token));
+        User user = userMapper.findById(me.getId());
+        if (user != null) {
+            me.setAvatar(user.getAvatar());
+            me.setAvatarBg(user.getAvatarBg());
+        }
         return me;
     }
 

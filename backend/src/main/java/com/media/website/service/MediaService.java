@@ -3,6 +3,7 @@ package com.media.website.service;
 import com.media.website.entity.Media;
 import com.media.website.mapper.MediaMapper;
 import com.media.website.mapper.TagMapper;
+import com.media.website.vo.MediaVO;
 import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
 import lombok.extern.slf4j.Slf4j;
@@ -292,6 +293,12 @@ public class MediaService {
         List<Media> list = mediaMapper.findPublic(offset, size);
         long total = mediaMapper.countPublic();
         return PageResultVO.of(list, total, page, size);
+    }
+
+    public List<MediaVO> getRandomPublicMedia(int limit) {
+        if (limit < 1) limit = 100;
+        if (limit > 100) limit = 100;
+        return mediaMapper.findRandomPublic(limit);
     }
 
     public void renameTitle(Long userId,Long id, String title){

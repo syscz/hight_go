@@ -12,6 +12,10 @@ public class User {
 
     private String role = "USER";
 
+    private String avatar;
+
+    private String avatarBg;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -35,6 +39,12 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public String getAvatarBg() { return avatarBg; }
+    public void setAvatarBg(String avatarBg) { this.avatarBg = avatarBg; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

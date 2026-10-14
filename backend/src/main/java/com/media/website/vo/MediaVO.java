@@ -23,6 +23,7 @@ public class MediaVO {
     private AlbumVO album;
     private Long userId;
     private String coverImage;
+    private Integer duration;
     private Integer viewCount;
     private Boolean isFavorite;
     private Boolean isDeleted;
@@ -31,6 +32,10 @@ public class MediaVO {
     private List<TagVO> tags;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /** 作者信息，仅公开广场等 join users 的查询填充 */
+    private String authorName;
+    private String authorAvatar;
 
     public static MediaVO from(Media media) {
         if (media == null) {
@@ -51,6 +56,7 @@ public class MediaVO {
         vo.setAlbum(AlbumVO.from(media.getAlbum()));
         vo.setUserId(media.getUserId());
         vo.setCoverImage(media.getCoverImage());
+        vo.setDuration(media.getDuration());
         vo.setViewCount(media.getViewCount());
         vo.setIsFavorite(media.getIsFavorite());
         vo.setIsDeleted(media.getIsDeleted());

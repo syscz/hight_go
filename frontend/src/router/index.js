@@ -28,7 +28,8 @@ const routes = [
   {
     path: '/auth',
     name: 'Auth',
-    component: () => import('../views/Auth.vue')
+    component: () => import('../views/Auth.vue'),
+    meta: { layout: 'bare' }
   },
   {
     path: '/favorites',
@@ -63,7 +64,8 @@ const routes = [
   {
     path: '/public',
     name: 'PublicGallery',
-    component: () => import('../views/PublicGallery.vue')
+    component: () => import('../views/PublicGallery.vue'),
+    meta: { layout: 'square' }
   }
 ]
 

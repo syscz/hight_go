@@ -4,7 +4,7 @@
 <mapper namespace="com.media.website.mapper.UserMapper">
 
     <sql id="userColumns">
-        id, username, password, role, created_at, updated_at
+        id, username, password, role, avatar, avatar_bg, created_at, updated_at
     </sql>
 
     <select id="findByUsername" resultType="User">
@@ -33,6 +33,18 @@
     <update id="updatePassword">
         UPDATE users
         SET password = #{password}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateAvatar">
+        UPDATE users
+        SET avatar = #{avatar}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateAvatarBg">
+        UPDATE users
+        SET avatar_bg = #{avatarBg}, updated_at = NOW()
         WHERE id = #{id}
     </update>
 

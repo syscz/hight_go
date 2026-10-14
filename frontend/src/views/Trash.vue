@@ -7,25 +7,26 @@
         <el-button type="danger" @click="permanentDeleteAll">清空回收站</el-button>
       </div>
     </div>
-    <div v-if="mediaList.length === 0" class="empty-state">
-      <p>回收站为空</p>
-    </div>
+    <EmptyState
+      v-if="mediaList.length === 0"
+      icon="🗑"
+      title="回收站为空"
+      hint="删除的内容会在这里保留 30 天，之后自动清理"
+    />
     <div v-else class="media-grid">
-      <div
+      <MediaTile
         v-for="item in mediaList"
         :key="item.id"
-        class="media-item"
+        :item="item"
+        :selectable="false"
+        :favoritable="false"
+        grayscale
       >
-        <img v-if="item.mediaType === 'image'" :src="getCoverUrl(item)" :alt="item.title" loading="lazy" />
-        <video v-else :src="getCoverUrl(item)" />
-        <div class="media-overlay">
-          <span class="media-title">{{ item.title || item.filename }}</span>
-          <div class="media-actions">
-            <button @click="restoreItem(item)">恢复</button>
-            <button class="delete" @click="permanentDelete(item)">删除</button>
-          </div>
-        </div>
-      </div>
+        <template #actions>
+          <button class="trash-btn" @click.stop="restoreItem(item)">恢复</button>
+          <button class="trash-btn delete" @click.stop="permanentDelete(item)">删除</button>
+        </template>
+      </MediaTile>
     </div>
   </div>
 </template>
@@ -34,22 +35,19 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api/index'
+import MediaTile from '@/components/MediaTile.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 const mediaList = ref([])
 
 const fetchTrash = async () => {
   try {
-    const response = await api.get('/media', { params: { deleted: true } })
-    mediaList.value = response.data
+    const response = await api.get('/media', { params: { deleted: true, size: 200 } })
+    const data = response.data
+    mediaList.value = Array.isArray(data) ? data : (data.list || [])
   } catch (error) {
     ElMessage.error('获取回收站失败')
   }
-}
-
-const getCoverUrl = (item) => {
-  if (!item.coverImage) return ''
-  if (item.coverImage.startsWith('http')) return item.coverImage
-  return 'http://47.97.191.168' + (item.coverImage.startsWith('/') ? '' : '/') + item.coverImage
 }
 
 const restoreItem = async (item) => {
@@ -111,10 +109,12 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+
     h2 {
       margin: 0;
       color: var(--text-primary);
     }
+
     .header-actions {
       display: flex;
       gap: 1rem;
@@ -122,74 +122,39 @@ onMounted(() => {
   }
 }
 
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-muted);
-}
-
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: 0.45rem;
 }
 
-.media-item {
-  position: relative;
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  transition: all 0.3s;
+.trash-btn {
+  flex: 1;
+  padding: 0.3rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 
   &:hover {
-    transform: translateY(-4px);
-    border-color: rgba(79, 195, 247, 0.45);
-    box-shadow: var(--shadow-glow);
+    background: rgba(255, 255, 255, 0.3);
   }
-  img, video {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    filter: grayscale(50%);
+
+  &.delete {
+    background: rgba(255, 0, 0, 0.5);
+
+    &:hover {
+      background: rgba(255, 0, 0, 0.7);
+    }
   }
-  .media-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.8));
-    padding: 1rem 0.5rem 0.5rem;
-    .media-title {
-      color: white;
-      font-size: 0.9rem;
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-    .media-actions {
-      display: flex;
-      gap: 0.5rem;
-      button {
-        flex: 1;
-        padding: 0.3rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        background: rgba(255,255,255,0.2);
-        color: white;
-        &:hover {
-          background: rgba(255,255,255,0.3);
-        }
-        &.delete {
-          background: rgba(255,0,0,0.5);
-          &:hover {
-            background: rgba(255,0,0,0.7);
-          }
-        }
-      }
-    }
+}
+
+@media (max-width: 768px) {
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 0.3rem;
   }
 }
 </style>

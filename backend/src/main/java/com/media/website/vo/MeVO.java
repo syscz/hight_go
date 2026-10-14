@@ -6,4 +6,6 @@ import lombok.Data;
 public class MeVO {
     private Long id;
     private String username;
+    private String avatar;
+    private String avatarBg;
 }

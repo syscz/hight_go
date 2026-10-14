@@ -29,7 +29,7 @@
         />
         <video
           v-else
-          :src="getMediaUrl(ssMedia.filePath)"
+          :src="videoSrc(ssMedia)"
           controls
           autoplay
         ></video>
@@ -89,10 +89,12 @@
               v-img-fade
             />
             <div v-else class="video-thumbnail">
-              <img :src="getMediaUrl(media.coverImage) || '/placeholder-video.png'" :alt="media.title" loading="lazy" />
+              <img v-if="media.coverImage" :src="getMediaUrl(media.coverImage)" :alt="media.title" loading="lazy" v-img-fade />
+              <video v-else :src="videoSrc(media) + '#t=1'" preload="metadata" muted playsinline></video>
               <div class="play-overlay">
                 <div class="play-btn">▶</div>
               </div>
+              <span v-if="durationText(media)" class="video-duration">{{ durationText(media) }}</span>
             </div>
             <div class="media-type-badge">
               {{ media.mediaType === 'image' ? '🖼️' : '🎬' }}
@@ -149,11 +151,14 @@
         :items="filteredMediaList"
       />
 
-      <div v-if="!loading && filteredMediaList.length === 0" class="empty-state">
-        <div class="empty-icon">📭</div>
-        <p>还没有作品</p>
-        <p class="empty-hint">上传一些内容到这个相册吧~</p>
-      </div>
+      <EmptyState
+        v-if="!loading && filteredMediaList.length === 0"
+        icon="📭"
+        title="还没有作品"
+        hint="上传一些内容到这个相册吧~"
+        cta-text="去上传"
+        @cta="router.push('/upload')"
+      />
     </div>
   </div>
 </template>
@@ -164,7 +169,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api/index'
+import { resolveMediaUrl, videoPlaySrc, formatDuration } from '@/utils/media'
 import MediaLightbox from '../components/MediaLightbox.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -394,11 +401,11 @@ const goBack = () => {
   router.push({ name: 'Home' })
 }
 
-const getMediaUrl = (filePath) => {
-  if (!filePath) return ''
-  if (filePath.startsWith('http')) return filePath
-  return 'http://47.97.191.168' + (filePath.startsWith('/') ? '' : '/') + filePath
-}
+const getMediaUrl = (filePath) => resolveMediaUrl(filePath)
+
+const videoSrc = (item) => videoPlaySrc(item)
+
+const durationText = (item) => formatDuration(item.duration)
 
 const formatSize = (bytes) => {
   if (!bytes) return '0 B'
@@ -605,10 +612,26 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
 
-  img {
+  img,
+  video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .video-duration {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    background: rgba(0, 0, 0, 0.65);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+    z-index: 2;
   }
 
   .play-overlay {
@@ -661,27 +684,6 @@ onUnmounted(() => {
     justify-content: space-between;
     font-size: 0.8rem;
     color: var(--text-secondary);
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-
-  .empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    color: white;
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-hint {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
   }
 }
 

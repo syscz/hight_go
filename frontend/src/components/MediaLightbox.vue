@@ -29,7 +29,7 @@
       />
       <video
         v-else
-        :src="fullUrl(current.videoMp4Path || current.filePath)"
+        :src="videoPlaySrc(current)"
         controls
         autoplay
       ></video>
@@ -53,6 +53,9 @@
         <div class="info-row"><span>文件名</span><b>{{ current.filename || '—' }}</b></div>
         <div class="info-row"><span>类型</span><b>{{ current.mediaType === 'image' ? '图片' : '视频' }}</b></div>
         <div class="info-row"><span>大小</span><b>{{ formatSize(current.fileSize) }}</b></div>
+        <div class="info-row" v-if="current.mediaType === 'video' && current.duration">
+          <span>时长</span><b>{{ formatDuration(current.duration) }}</b>
+        </div>
         <div class="info-row"><span>上传时间</span><b>{{ formatDate(current.createdAt) }}</b></div>
         <div class="info-row"><span>浏览次数</span><b>{{ current.viewCount || 0 }}</b></div>
         <div class="info-row" v-if="current.tags && current.tags.length">
@@ -67,6 +70,7 @@
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { resolveMediaUrl, videoPlaySrc, formatDuration } from '@/utils/media'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -111,11 +115,25 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString()
 }
 
-const fullUrl = (path) => {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  return 'http://47.97.191.168' + (path.startsWith('/') ? '' : '/') + path
+const fullUrl = (path) => resolveMediaUrl(path)
+
+/** 预加载相邻图片，切换时不白屏等待 */
+const preloadAdjacent = () => {
+  const n = props.items.length
+  if (n < 2) return
+  ;[(props.index + 1) % n, (props.index - 1 + n) % n].forEach((i) => {
+    const item = props.items[i]
+    if (item && item.mediaType === 'image' && item.filePath) {
+      const img = new Image()
+      img.src = resolveMediaUrl(item.filePath)
+    }
+  })
 }
+
+watch(() => props.index, () => {
+  scale.value = 1
+  preloadAdjacent()
+})
 
 const close = () => emit('update:visible', false)
 const prev = () => {

@@ -1,78 +1,138 @@
 <template>
   <div class="app">
-    <!-- 桌面侧边栏 -->
-    <aside class="sidebar">
-      <router-link to="/" class="sidebar-logo">SEE</router-link>
-      <nav class="sidebar-nav">
-        <router-link to="/" class="side-link">
-          <span class="side-icon">🖼</span><span>照片</span>
-        </router-link>
-        <router-link to="/upload" class="side-link">
-          <span class="side-icon">⬆️</span><span>上传</span>
-        </router-link>
-        <router-link to="/?viewMode=albums" class="side-link">
-          <span class="side-icon">📁</span><span>相册</span>
-        </router-link>
-        <router-link to="/timeline" class="side-link">
-          <span class="side-icon">🕐</span><span>时间线</span>
-        </router-link>
-        <router-link to="/calendar" class="side-link">
-          <span class="side-icon">📅</span><span>日历</span>
-        </router-link>
-        <router-link to="/public" class="side-link">
-          <span class="side-icon">🌍</span><span>公开广场</span>
-        </router-link>
-        <router-link to="/search" class="side-link">
-          <span class="side-icon">🔍</span><span>搜索</span>
-        </router-link>
-        <router-link to="/trash" class="side-link">
-          <span class="side-icon">🗑</span><span>回收站</span>
-        </router-link>
-      </nav>
-      <div class="sidebar-bottom">
-        <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
-          {{ isDark ? '☀️' : '🌙' }}
-        </button>
-        <span v-if="currentUser" class="user-name">{{ currentUser.username }}</span>
-        <button v-if="currentUser" class="logout-btn" @click="passwordDialogVisible = true">改密码</button>
-        <button v-if="currentUser" class="logout-btn" @click="handleLogout">退出</button>
-      </div>
-    </aside>
-
-    <!-- 主内容 -->
-    <div class="main-area">
-      <div class="topbar">
-        <el-input
-          v-model="globalKeyword"
-          placeholder="搜索媒体..."
-          clearable
-          class="global-search"
-          @keyup.enter="doGlobalSearch"
-        >
-          <template #prefix>🔍</template>
-        </el-input>
-      </div>
-      <header class="mobile-header">
-        <router-link to="/" class="mobile-logo">SEE</router-link>
-        <button class="theme-toggle" @click="toggleTheme">{{ isDark ? '☀️' : '🌙' }}</button>
+    <!-- 广场：沉浸式布局（无侧边栏） -->
+    <template v-if="layout === 'square'">
+      <header class="square-topbar">
+        <router-link to="/public" class="square-logo">SEE</router-link>
+        <ModeSwitch class="sw-normal" />
+        <ModeSwitch compact class="sw-compact" />
+        <div class="square-actions">
+          <button class="ghost-btn" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
+            {{ isDark ? '☀️' : '🌙' }}
+          </button>
+          <template v-if="userStore.isLoggedIn">
+            <button class="ghost-btn enter-space" @click="router.push('/')">进入个人空间</button>
+            <img
+              v-if="userStore.user?.avatar"
+              :src="resolveMediaUrl(userStore.user.avatar)"
+              class="bar-avatar"
+              alt="头像"
+              @click="router.push('/')"
+            />
+            <span v-else class="bar-avatar bar-avatar--placeholder" @click="router.push('/')">
+              {{ avatarInitial }}
+            </span>
+          </template>
+          <router-link v-else to="/auth" class="auth-link">登录 / 注册</router-link>
+        </div>
       </header>
-      <main class="main">
+      <main class="square-main">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
       </main>
-    </div>
+    </template>
 
-    <!-- 移动端底部导航 -->
-    <nav class="mobile-nav">
-      <router-link to="/" class="mobile-link"><span>🖼</span><span>照片</span></router-link>
-      <router-link to="/?viewMode=albums" class="mobile-link"><span>📁</span><span>相册</span></router-link>
-      <router-link to="/upload" class="mobile-link mobile-upload"><span class="upload-plus">＋</span></router-link>
-      <router-link to="/search" class="mobile-link"><span>🔍</span><span>搜索</span></router-link>
-      <router-link to="/calendar" class="mobile-link"><span>📅</span><span>日历</span></router-link>
-    </nav>
+    <!-- 登录/注册：极简布局 -->
+    <template v-else-if="layout === 'bare'">
+      <header class="bare-topbar">
+        <router-link to="/" class="square-logo">SEE</router-link>
+        <button class="ghost-btn" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
+          {{ isDark ? '☀️' : '🌙' }}
+        </button>
+      </header>
+      <main class="bare-main">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </template>
+
+    <!-- 个人空间：侧边栏布局 -->
+    <template v-else>
+      <aside class="sidebar">
+        <router-link to="/" class="sidebar-logo">SEE</router-link>
+        <nav class="sidebar-nav">
+          <router-link to="/" class="side-link">
+            <span class="side-icon">🖼</span><span>照片</span>
+          </router-link>
+          <router-link to="/upload" class="side-link">
+            <span class="side-icon">⬆️</span><span>上传</span>
+          </router-link>
+          <router-link to="/?tab=albums" class="side-link">
+            <span class="side-icon">📁</span><span>相册</span>
+          </router-link>
+          <router-link to="/timeline" class="side-link">
+            <span class="side-icon">🕐</span><span>时间线</span>
+          </router-link>
+          <router-link to="/calendar" class="side-link">
+            <span class="side-icon">📅</span><span>日历</span>
+          </router-link>
+          <router-link to="/search" class="side-link">
+            <span class="side-icon">🔍</span><span>搜索</span>
+          </router-link>
+          <router-link to="/trash" class="side-link">
+            <span class="side-icon">🗑</span><span>回收站</span>
+          </router-link>
+        </nav>
+        <div class="sidebar-bottom">
+          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
+            {{ isDark ? '☀️' : '🌙' }}
+          </button>
+          <img
+            v-if="userStore.user?.avatar"
+            :src="resolveMediaUrl(userStore.user.avatar)"
+            class="bar-avatar"
+            alt="头像"
+          />
+          <span v-else class="bar-avatar bar-avatar--placeholder">{{ avatarInitial }}</span>
+          <span v-if="userStore.isLoggedIn" class="user-name">{{ userStore.displayName }}</span>
+          <button v-if="userStore.isLoggedIn" class="logout-btn" @click="passwordDialogVisible = true">改密码</button>
+          <button v-if="userStore.isLoggedIn" class="logout-btn" @click="handleLogout">退出</button>
+        </div>
+      </aside>
+
+      <div class="main-area">
+        <div class="topbar">
+          <ModeSwitch />
+          <el-input
+            v-model="globalKeyword"
+            placeholder="搜索媒体..."
+            clearable
+            class="global-search"
+            @keyup.enter="doGlobalSearch"
+          >
+            <template #prefix>🔍</template>
+          </el-input>
+        </div>
+        <header class="mobile-header">
+          <router-link to="/" class="mobile-logo">SEE</router-link>
+          <div class="mobile-header-right">
+            <ModeSwitch compact />
+            <button class="theme-toggle" @click="toggleTheme">{{ isDark ? '☀️' : '🌙' }}</button>
+          </div>
+        </header>
+        <main class="main">
+          <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </main>
+      </div>
+
+      <nav class="mobile-nav">
+        <router-link to="/" class="mobile-link"><span>🖼</span><span>照片</span></router-link>
+        <router-link to="/?tab=albums" class="mobile-link"><span>📁</span><span>相册</span></router-link>
+        <router-link to="/upload" class="mobile-link mobile-upload"><span class="upload-plus">＋</span></router-link>
+        <router-link to="/search" class="mobile-link"><span>🔍</span><span>搜索</span></router-link>
+        <router-link to="/calendar" class="mobile-link"><span>📅</span><span>日历</span></router-link>
+      </nav>
+    </template>
 
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="360px" align-center>
       <el-form label-width="80px">
@@ -95,17 +155,32 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '@/api/index'
+import { resolveMediaUrl } from '@/utils/media'
+import ModeSwitch from '@/components/ModeSwitch.vue'
+import { useUserStore } from '@/stores/user'
 
+const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
-const currentUser = computed(() => {
-  const userStr = localStorage.getItem('user')
-  return userStr ? JSON.parse(userStr) : null
+// 启动时刷新用户资料（头像/背景在其他端更新后，本端免重登即可见）
+onMounted(async () => {
+  if (!localStorage.getItem('token')) return
+  try {
+    const response = await api.get('/auth/me')
+    userStore.applyUserVO(response.data)
+  } catch {
+    // token 失效由 axios 拦截器统一处理
+  }
 })
+
+const layout = computed(() => route.meta.layout || 'app')
+
+const avatarInitial = computed(() => (userStore.displayName || '?').slice(0, 1).toUpperCase())
 
 const isDark = ref(localStorage.getItem('theme') !== 'light')
 document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
@@ -146,18 +221,157 @@ const handleChangePassword = async () => {
 
 const handleLogout = () => {
   localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  userStore.clear()
   window.location.href = '/auth'
 }
 </script>
 
 <style lang="scss">
 .app {
-  display: flex;
+  display: block;
   min-height: 100vh;
 }
 
-/* 桌面侧边栏 */
+/* ===== 通用小头像 / 幽灵按钮（广场顶栏 & 侧边栏共用） ===== */
+.bar-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+  cursor: pointer;
+
+  &--placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+    color: #06222e;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+}
+
+.ghost-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+}
+
+/* ===== 广场布局 ===== */
+.square-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 1.5rem;
+  background: rgba(10, 14, 20, 0.78);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  .square-logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #81d4fa 0%, #e0f7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+
+  .sw-compact {
+    display: none;
+  }
+
+  .square-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    .enter-space {
+      @media (max-width: 600px) {
+        display: none;
+      }
+    }
+
+    .auth-link {
+      background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+      color: #06222e;
+      font-weight: 700;
+      font-size: 0.88rem;
+      text-decoration: none;
+      padding: 0.45rem 1rem;
+      border-radius: 10px;
+      transition: all 0.2s;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(79, 195, 247, 0.4);
+      }
+    }
+  }
+}
+
+html[data-theme='light'] .square-topbar,
+html[data-theme='light'] .bare-topbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom-color: rgba(15, 30, 50, 0.08);
+
+  .ghost-btn {
+    background: rgba(15, 30, 50, 0.06);
+    border-color: rgba(15, 30, 50, 0.12);
+    color: rgba(15, 30, 50, 0.8);
+  }
+}
+
+.square-main {
+  min-height: calc(100vh - 61px);
+}
+
+/* ===== 登录页布局 ===== */
+.bare-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.5rem;
+  background: rgba(10, 14, 20, 0.78);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  .square-logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #81d4fa 0%, #e0f7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+}
+
+.bare-main {
+  min-height: calc(100vh - 61px);
+}
+
+/* ===== 个人空间布局（原侧边栏布局） ===== */
 .sidebar {
   position: fixed;
   top: 0;
@@ -245,6 +459,9 @@ const handleLogout = () => {
       color: rgba(255, 255, 255, 0.7);
       font-size: 0.85rem;
       margin-left: auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }
@@ -260,7 +477,9 @@ const handleLogout = () => {
   top: 0;
   z-index: 950;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
   padding: 0.7rem 1.5rem;
   background: rgba(10, 10, 12, 0.75);
   backdrop-filter: blur(14px);
@@ -323,6 +542,10 @@ html[data-theme='light'] .sidebar {
       color: rgba(15, 30, 50, 0.6);
     }
   }
+
+  .bar-avatar {
+    border-color: rgba(15, 30, 50, 0.2);
+  }
 }
 
 /* 移动端 */
@@ -356,6 +579,12 @@ html[data-theme='light'] .sidebar {
       -webkit-text-fill-color: transparent;
       background-clip: text;
       text-decoration: none;
+    }
+
+    .mobile-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .theme-toggle {
@@ -445,6 +674,20 @@ html[data-theme='light'] .sidebar {
 
   .topbar {
     display: none;
+  }
+
+  /* 广场顶栏移动端压缩 */
+  .square-topbar {
+    padding: 0.55rem 0.8rem;
+    gap: 0.5rem;
+
+    .sw-normal {
+      display: none;
+    }
+
+    .sw-compact {
+      display: inline-flex;
+    }
   }
 }
 

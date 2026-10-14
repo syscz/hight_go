@@ -10,6 +10,8 @@ public class UserVO {
     private Long id;
     private String username;
     private String role;
+    private String avatar;
+    private String avatarBg;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -21,6 +23,8 @@ public class UserVO {
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setRole(user.getRole());
+        vo.setAvatar(user.getAvatar());
+        vo.setAvatarBg(user.getAvatarBg());
         vo.setCreatedAt(user.getCreatedAt());
         vo.setUpdatedAt(user.getUpdatedAt());
         return vo;

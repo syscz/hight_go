@@ -196,6 +196,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Calendar, Document, View, Delete, Link, EditPen } from '@element-plus/icons-vue'
 import api from '@/api/index'
+import { resolveMediaUrl } from '@/utils/media'
 
 const route = useRoute()
 const router = useRouter()
@@ -276,11 +277,7 @@ const toggleZoom = () => {
   }
 }
 
-const getMediaUrl = (filePath) => {
-  if (!filePath) return ''
-  if (filePath.startsWith('http')) return filePath
-  return 'http://47.97.191.168' + (filePath.startsWith('/') ? '' : '/') + filePath
-}
+const getMediaUrl = (filePath) => resolveMediaUrl(filePath)
 
 const fetchMediaDetail = async () => {
   const id = route.params.id

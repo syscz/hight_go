@@ -16,4 +16,8 @@ public interface UserMapper {
     int insert(User user);
 
     int updatePassword(@Param("id") Long id, @Param("password") String password);
+
+    int updateAvatar(@Param("id") Long id, @Param("avatar") String avatar);
+
+    int updateAvatarBg(@Param("id") Long id, @Param("avatarBg") String avatarBg);
 }
