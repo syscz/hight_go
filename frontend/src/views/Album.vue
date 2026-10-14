@@ -8,6 +8,9 @@
       <div class="header-actions">
         <el-button round @click="goBack">← 返回</el-button>
         <template v-if="!sortMode">
+          <el-button round :type="coverMode ? 'warning' : 'default'" @click="enterCoverMode" v-if="mediaList.length > 0">
+            {{ coverMode ? '✕ 退出封面选择' : '🖼 封面' }}
+          </el-button>
           <el-button round @click="enterSortMode" v-if="mediaList.length > 1">↕ 排序</el-button>
           <el-button round type="primary" @click="startSlideshow" v-if="mediaList.length > 0">▶ 播放</el-button>
         </template>
@@ -44,12 +47,20 @@
     </div>
 
     <div class="container">
+      <div v-if="coverMode" class="cover-mode-bar">
+        <span>🖼 点击一张图片，将它设为「{{ albumName }}」的封面（视频需转码完成后才可选择）</span>
+        <el-button size="small" @click="coverMode = false">取消</el-button>
+      </div>
+
       <div v-if="selectedIds.length > 0" class="batch-actions">
         <span class="selected-count">已选择 {{ selectedIds.length }} 项</span>
         <el-button type="primary" @click="handleBatchMove">移动到</el-button>
         <el-button type="danger" @click="handleBatchDelete">删除</el-button>
         <el-button type="primary" @click="showEditDialog">编辑</el-button>
         <el-button type="success" @click="batchDownload">下载</el-button>
+        <el-button type="warning" :disabled="selectedIds.length !== 1" @click="setCoverFromSelection">
+          设为封面
+        </el-button>
         <el-button @click="clearSelection">取消</el-button>
       </div>
 
@@ -66,10 +77,11 @@
           v-for="(media, index) in (sortMode ? sortItems : filteredMediaList)"
           :key="media.id"
           class="media-item"
-          :class="{ selected: selectedIds.includes(media.id) }"
-          @click="sortMode ? null : handleItemClick(media.id, index)"
+          :class="{ selected: selectedIds.includes(media.id), 'cover-mode': coverMode }"
+          @click="coverMode ? chooseCover(media) : (sortMode ? null : handleItemClick(media.id, index))"
           @click.right.prevent="toggleSelection(media.id)"
         >
+          <span v-if="isCurrentCover(media)" class="current-cover-badge">当前封面</span>
           <div v-if="sortMode" class="sort-controls">
             <button @click.stop="moveUp(index)" :disabled="index === 0">↑</button>
             <button @click.stop="moveDown(index)" :disabled="index === (sortMode ? sortItems.length : 0) - 1">↓</button>
@@ -193,9 +205,17 @@ const lightboxVisible = ref(false)
 const lightboxIndex = ref(0)
 const sortMode = ref(false)
 const sortItems = ref([])
+const coverMode = ref(false)
 
 const mediaList = computed(() => mediaStore.mediaList)
 const loading = computed(() => mediaStore.loading)
+
+const currentAlbum = computed(() =>
+  mediaStore.albums.find(a => a.id === parseInt(route.params.id)) || null
+)
+
+const isCurrentCover = (media) =>
+  !!currentAlbum.value?.coverImage && media.coverImage === currentAlbum.value.coverImage
 
 const otherAlbums = computed(() => {
   return mediaStore.albums.filter(a => a.id !== parseInt(route.params.id))
@@ -230,6 +250,47 @@ const handleItemClick = (id, index) => {
     lightboxIndex.value = index
     lightboxVisible.value = true
   }
+}
+
+const enterCoverMode = () => {
+  coverMode.value = true
+  ElMessage.info('点击一张图片，将它设为相册封面')
+}
+
+const chooseCover = async (media) => {
+  if (!media.coverImage) {
+    ElMessage.warning('该媒体暂无可用封面（视频转码完成后才能选择），请选择图片')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `将「${media.title || media.filename}」设为相册「${albumName.value}」的封面？`,
+      '设置封面',
+      { confirmButtonText: '设为封面', cancelButtonText: '取消', type: 'info' }
+    )
+  } catch {
+    return
+  }
+  try {
+    await api.put(`/albums/${route.params.id}`, {
+      name: albumName.value,
+      description: currentAlbum.value?.description || '',
+      coverImage: media.coverImage
+    })
+    await mediaStore.fetchAlbums()
+    ElMessage.success('封面已更新 ✨')
+    coverMode.value = false
+  } catch (error) {
+    ElMessage.error('封面设置失败')
+  }
+}
+
+const setCoverFromSelection = async () => {
+  if (selectedIds.value.length !== 1) return
+  const media = mediaList.value.find(m => m.id === selectedIds.value[0])
+  if (!media) return
+  await chooseCover(media)
+  clearSelection()
 }
 
 const toggleSelection = (id) => {
@@ -513,6 +574,20 @@ onUnmounted(() => {
   }
 }
 
+.cover-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -526,6 +601,30 @@ onUnmounted(() => {
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
+
+  &.cover-mode {
+    cursor: crosshair;
+
+    &:hover {
+      outline: 2px solid #ffc107;
+      outline-offset: -2px;
+    }
+  }
+
+  .current-cover-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 3;
+    background: linear-gradient(135deg, #ffb74d 0%, #ffa726 100%);
+    color: #3e2723;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
   position: relative;
 
   &:hover {
