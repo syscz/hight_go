@@ -180,6 +180,12 @@
         WHERE <include refid="pageConditions"/>
     </select>
 
+    <select id="countMediaByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM media
+        WHERE user_id = #{userId} AND is_deleted = FALSE
+    </select>
+
     <select id="getTotalFileSizeByUserId" resultType="java.lang.Long">
         SELECT COALESCE(SUM(file_size), 0)
         FROM media

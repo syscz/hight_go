@@ -8,6 +8,7 @@ import com.media.website.vo.PageResultVO;
 import com.media.website.vo.StatsVO;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +30,12 @@ public class MediaService {
     private final FileUploadService fileUploadService;
     private final TagMapper tagMapper;
     private final VideoTranscodeService videoTranscodeService;
+
+    /** 每用户存储配额：累计原始文件总量（默认 2GB）与媒体数量上限（默认 500 项） */
+    @Value("${auth.quota.max-total-bytes:2147483648}")
+    private long quotaTotalBytes;
+    @Value("${auth.quota.max-count:500}")
+    private int quotaMaxCount;
 
     public List<Media> getMediaList(Long userId, Media.MediaType type, Long categoryId, Long albumId,
                                     String keyword, Boolean favorite, Boolean deleted, Long tagId) {
@@ -103,6 +110,16 @@ public class MediaService {
                 .filter(m -> userId.equals(m.getUserId()));
     }
 
+    /** 详情可见性：属主或已公开的媒体（游客/他人可看公开内容，修改操作仍走属主校验的 getMediaById） */
+    public Optional<Media> getVisibleMedia(Long userId, Long id) {
+        Media media = mediaMapper.findById(id);
+        if (media == null) {
+            return Optional.empty();
+        }
+        boolean owner = userId != null && userId.equals(media.getUserId());
+        return (owner || Boolean.TRUE.equals(media.getIsPublic())) ? Optional.of(media) : Optional.empty();
+    }
+
     public void incrementViewCount(Long id) {
         mediaMapper.incrementViewCount(id);
     }
@@ -135,6 +152,8 @@ public class MediaService {
             if ("other".equals(fileType)) {
                 throw new IllegalArgumentException("不支持的文件类型，仅支持图片（jpg/jpeg/png/gif/webp/bmp）和视频（mp4/avi/mov/wmv/flv/mkv）");
             }
+
+            checkStorageQuota(userId, file.getSize());
 
             String fileUrl = fileUploadService.uploadFile(file);
 
@@ -278,6 +297,19 @@ public class MediaService {
             for (Long mediaId : mediaIds) {
                 setMediaTags(userId, mediaId, tagIds);
             }
+        }
+    }
+
+    /** 上传前的每用户配额校验：回收站中的文件按“未入回收站统计”口径计算，避免用户视角困惑 */
+    private void checkStorageQuota(Long userId, long incomingBytes) {
+        Long used = mediaMapper.getTotalFileSizeByUserId(userId);
+        if (used != null && used + incomingBytes > quotaTotalBytes) {
+            long limitMb = quotaTotalBytes / 1024 / 1024;
+            throw new IllegalArgumentException("存储空间已满：每用户上限 " + limitMb + " MB，请清理不需要的媒体后重试");
+        }
+        int count = mediaMapper.countMediaByUserId(userId);
+        if (count >= quotaMaxCount) {
+            throw new IllegalArgumentException("媒体数量已达上限（" + quotaMaxCount + " 项），无法继续上传");
         }
     }
 

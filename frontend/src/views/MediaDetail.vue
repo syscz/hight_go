@@ -28,7 +28,7 @@
       <div v-if="media" class="media-info">
         <div class="title-row">
           <h2>{{ media.title || media.filename }}</h2>
-          <el-button size="small" text @click="openRenameDialog">
+          <el-button v-if="isOwner" size="small" text @click="openRenameDialog">
             <el-icon><EditPen /></el-icon> 改名
           </el-button>
         </div>
@@ -47,10 +47,10 @@
           </span>
         </div>
         <div class="info-actions">
-          <el-button :type="media.isFavorite ? 'danger' : 'default'" @click="toggleFavorite">
+          <el-button v-if="isOwner" :type="media.isFavorite ? 'danger' : 'default'" @click="toggleFavorite">
             {{ media.isFavorite ? '♥ 取消收藏' : '♡ 收藏' }}
           </el-button>
-          <div class="public-toggle">
+          <div v-if="isOwner" class="public-toggle">
             <span class="public-label">公开</span>
             <el-switch
               :model-value="!!media.isPublic"
@@ -60,7 +60,7 @@
               inactive-text="关"
             />
           </div>
-          <el-button type="danger" @click="handleDelete">
+          <el-button v-if="isOwner" type="danger" @click="handleDelete">
             <el-icon><Delete /></el-icon> 删除
           </el-button>
           <el-button @click="copyLink">
@@ -78,14 +78,14 @@
             <el-tag
               v-for="tag in media.tags || []"
               :key="tag.id"
-              closable
-              @close="removeTag(tag.id)"
+              :closable="isOwner"
+              @close="isOwner && removeTag(tag.id)"
             >
               {{ tag.name }}
             </el-tag>
             <span v-if="!media.tags || media.tags.length === 0" class="no-tags">暂无标签</span>
           </div>
-          <div class="tag-edit">
+          <div v-if="isOwner" class="tag-edit">
             <el-select
               v-model="newTagIds"
               multiple
@@ -115,7 +115,7 @@
 
         <div class="comments-section">
           <h3>评论 ({{ comments.length }})</h3>
-          <div class="comment-input">
+          <div v-if="isLoggedIn" class="comment-input">
             <el-input
               v-model="newComment"
               type="textarea"
@@ -126,6 +126,9 @@
               发布
             </el-button>
           </div>
+          <p v-else class="login-hint">
+            <router-link to="/auth">登录</router-link> 后即可评论
+          </p>
           <div class="comments-list">
             <div v-for="comment in comments" :key="comment.id" class="comment-item">
               <div class="comment-header">
@@ -191,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Calendar, Document, View, Delete, Link, EditPen } from '@element-plus/icons-vue'
@@ -209,6 +212,11 @@ const lightboxImg = ref(null)
 const comments = ref([])
 const newComment = ref('')
 const currentUserId = ref(null)
+const isLoggedIn = computed(() => currentUserId.value != null)
+/** 属主才显示改名/删除/公开开关/收藏/标签编辑等操作 */
+const isOwner = computed(() =>
+  media.value != null && currentUserId.value != null && media.value.userId === currentUserId.value
+)
 const allTags = ref([])
 const newTagIds = ref([])
 const newTagName = ref('')
@@ -229,6 +237,8 @@ const handleKeydown = (e) => {
 }
 
 const fetchAllMedia = async () => {
+  // 媒体列表接口需要登录，游客跳过（左右键导航仅对登录用户可用）
+  if (currentUserId.value == null) return
   try {
     const response = await api.get('/media')
     allMediaList.value = response.data
@@ -286,7 +296,8 @@ const fetchMediaDetail = async () => {
     media.value = response.data
   } catch (error) {
     console.error('获取媒体详情失败:', error)
-    ElMessage.error('获取媒体详情失败')
+    ElMessage.error('媒体不存在或无权查看')
+    router.push('/public')
   } finally {
     loading.value = false
   }
@@ -395,6 +406,8 @@ const fetchComments = async () => {
 }
 
 const fetchTags = async () => {
+  // 标签列表仅用于属主编辑，游客跳过
+  if (!isOwner.value) return
   try {
     const response = await api.get('/tags')
     allTags.value = response.data
@@ -460,16 +473,19 @@ const deleteComment = async (commentId) => {
   }
 }
 
-onMounted(() => {
-  fetchMediaDetail()
+onMounted(async () => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    try {
+      currentUserId.value = JSON.parse(userStr).id
+    } catch {
+      currentUserId.value = null
+    }
+  }
+  await fetchMediaDetail()
   fetchComments()
   fetchAllMedia()
   fetchTags()
-  const userStr = localStorage.getItem('user')
-  if (userStr) {
-    const user = JSON.parse(userStr)
-    currentUserId.value = user.id
-  }
   document.querySelector('.media-detail').focus()
 })
 </script>
@@ -683,6 +699,18 @@ onMounted(() => {
       text-align: center;
       color: var(--text-muted);
       padding: 1rem;
+    }
+
+    .login-hint {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin: 0.5rem 0 0;
+
+      a {
+        color: #4fc3f7;
+        text-decoration: none;
+      }
     }
   }
 }

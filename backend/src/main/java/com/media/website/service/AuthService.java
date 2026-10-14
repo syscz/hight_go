@@ -8,16 +8,37 @@ import com.media.website.vo.AuthResponseVO;
 import com.media.website.vo.MeVO;
 import com.media.website.vo.UserVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
+    private static final long LOCK_MILLIS = 10 * 60 * 1000L;
+
     private final UserMapper userMapper;
     private final JwtService jwtService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    /** 注册邀请码：为空 = 关闭注册；配置后注册必须携带匹配的邀请码 */
+    @Value("${auth.invite-code:}")
+    private String inviteCode;
+
+    /** 登录失败计数（内存版，单机部署够用）：连续失败 5 次锁定 10 分钟 */
+    private final Map<String, LoginFail> loginFails = new ConcurrentHashMap<>();
+
+    private static class LoginFail {
+        int count;
+        long lockedUntil;
+    }
 
     private boolean isBcrypt(String password) {
         return password != null && password.startsWith("$2");
@@ -37,6 +58,15 @@ public class AuthService {
         if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
             throw new IllegalArgumentException("用户名和密码不能为空");
         }
+        if (inviteCode == null || inviteCode.isBlank()) {
+            throw new IllegalArgumentException("注册已关闭，请联系管理员开通账号");
+        }
+        if (request.getInviteCode() == null || request.getInviteCode().isBlank()) {
+            throw new IllegalArgumentException("请填写邀请码");
+        }
+        if (!inviteCode.equals(request.getInviteCode())) {
+            throw new IllegalArgumentException("邀请码不正确");
+        }
         if (userMapper.countByUsername(username) > 0) {
             throw new IllegalArgumentException("用户名已存在");
         }
@@ -52,10 +82,13 @@ public class AuthService {
         String username = request.getUsername();
         String password = request.getPassword();
 
+        checkLocked(username);
         User user = userMapper.findByUsername(username);
         if (user == null || !verifyPassword(password, user.getPassword())) {
+            recordLoginFail(username);
             throw new IllegalArgumentException("用户名或密码错误");
         }
+        loginFails.remove(username);
 
         if (!isBcrypt(user.getPassword())) {
             userMapper.updatePassword(user.getId(), passwordEncoder.encode(password));
@@ -64,6 +97,24 @@ public class AuthService {
 
         String token = jwtService.generateToken(username, user.getId(), user.getRole());
         return AuthResponseVO.of("登录成功", token, UserVO.from(user));
+    }
+
+    private void checkLocked(String username) {
+        LoginFail fail = loginFails.get(username);
+        if (fail != null && fail.lockedUntil > System.currentTimeMillis()) {
+            long minutes = (fail.lockedUntil - System.currentTimeMillis()) / 60000 + 1;
+            throw new IllegalArgumentException("失败次数过多，账号已临时锁定，请约 " + minutes + " 分钟后再试");
+        }
+    }
+
+    private void recordLoginFail(String username) {
+        LoginFail fail = loginFails.computeIfAbsent(username, k -> new LoginFail());
+        fail.count++;
+        if (fail.count >= MAX_LOGIN_ATTEMPTS) {
+            fail.lockedUntil = System.currentTimeMillis() + LOCK_MILLIS;
+            fail.count = 0;
+            log.warn("登录连续失败 {} 次，临时锁定用户: {}", MAX_LOGIN_ATTEMPTS, username);
+        }
     }
 
     public MeVO getCurrentUser(String authHeader) {

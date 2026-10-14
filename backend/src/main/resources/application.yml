@@ -33,3 +33,11 @@ file:
 jwt:
   secret: ${JWT_SECRET:hight-go-media-website-secret-key-2024}
   expiration: 86400000
+
+# 账号安全配置
+auth:
+  # 注册邀请码：为空 = 关闭注册（生产通过 systemd 环境变量 AUTH_INVITE_CODE 覆盖）
+  invite-code: ${AUTH_INVITE_CODE:}
+  quota:
+    max-total-bytes: ${AUTH_QUOTA_MAX_TOTAL_BYTES:2147483648}   # 每用户存储上限 2GB
+    max-count: ${AUTH_QUOTA_MAX_COUNT:500}                      # 每用户媒体数量上限

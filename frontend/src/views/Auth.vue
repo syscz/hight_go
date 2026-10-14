@@ -67,6 +67,13 @@
             required
           />
         </div>
+        <div class="form-group">
+          <input
+            v-model="registerForm.inviteCode"
+            type="text"
+            placeholder="邀请码（请联系管理员获取）"
+          />
+        </div>
         <button type="submit" class="submit-btn" :disabled="loading">
           {{ loading ? '注册中...' : '注册' }}
         </button>
@@ -99,7 +106,8 @@ const loginForm = ref({
 const registerForm = ref({
   username: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  inviteCode: ''
 })
 
 const handleLogin = async () => {
@@ -139,7 +147,8 @@ const handleRegister = async () => {
   try {
     const response = await api.post('/auth/register', {
       username: registerForm.value.username,
-      password: registerForm.value.password
+      password: registerForm.value.password,
+      inviteCode: registerForm.value.inviteCode
     })
 
     if (response.data.token) {

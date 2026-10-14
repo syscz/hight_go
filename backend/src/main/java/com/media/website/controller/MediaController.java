@@ -198,12 +198,9 @@ public class MediaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<MediaVO> getMedia(@PathVariable Long id,
-                                            @RequestHeader("Authorization") String authHeader) {
+                                            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         Long userId = authUtils.getUserId(authHeader);
-        if (userId == null) {
-            return ResponseEntity.status(401).build();
-        }
-        var media = mediaService.getMediaById(userId, id);
+        var media = mediaService.getVisibleMedia(userId, id);
         media.ifPresent(m -> {
             mediaService.incrementViewCount(id);
             m.setViewCount((m.getViewCount() == null ? 0 : m.getViewCount()) + 1);

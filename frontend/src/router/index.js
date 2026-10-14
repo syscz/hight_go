@@ -22,8 +22,7 @@ const routes = [
   {
     path: '/media/:id',
     name: 'MediaDetail',
-    component: () => import('../views/MediaDetail.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../views/MediaDetail.vue')
   },
   {
     path: '/auth',

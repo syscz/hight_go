@@ -43,6 +43,8 @@ public interface MediaMapper {
 
     Long getTotalFileSizeByUserId(@Param("userId") Long userId);
 
+    int countMediaByUserId(@Param("userId") Long userId);
+
     int insert(Media media);
 
     int updateFavorite(@Param("id") Long id, @Param("isFavorite") boolean isFavorite);
