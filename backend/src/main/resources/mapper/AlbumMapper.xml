@@ -19,9 +19,10 @@
         a.id, a.name, a.description, a.user_id, a.share_token, a.created_at, a.updated_at,
         (SELECT COUNT(*) FROM media m
          WHERE m.album_id = a.id AND m.is_deleted = FALSE) AS computed_media_count,
+        COALESCE(a.cover_image,
         (SELECT m.cover_image FROM media m
          WHERE m.album_id = a.id AND m.is_deleted = FALSE
-         ORDER BY m.id LIMIT 1) AS computed_cover_image
+         ORDER BY m.id LIMIT 1)) AS computed_cover_image
     </sql>
 
     <select id="findByUserId" resultMap="albumMap">
