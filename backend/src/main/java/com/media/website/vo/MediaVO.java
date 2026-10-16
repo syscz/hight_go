@@ -23,6 +23,8 @@ public class MediaVO {
     private AlbumVO album;
     private Long userId;
     private String coverImage;
+    private Integer coverWidth;
+    private Integer coverHeight;
     private Integer duration;
     private Integer viewCount;
     private Boolean isFavorite;
@@ -60,6 +62,8 @@ public class MediaVO {
         vo.setAlbum(AlbumVO.from(media.getAlbum()));
         vo.setUserId(media.getUserId());
         vo.setCoverImage(media.getCoverImage());
+        vo.setCoverWidth(media.getCoverWidth());
+        vo.setCoverHeight(media.getCoverHeight());
         vo.setDuration(media.getDuration());
         vo.setViewCount(media.getViewCount());
         vo.setIsFavorite(media.getIsFavorite());

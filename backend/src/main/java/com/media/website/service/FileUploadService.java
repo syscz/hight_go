@@ -164,6 +164,29 @@ public class FileUploadService {
     }
 
     /**
+     * 读取图片文件宽高（用于瀑布流占位），失败返回 null
+     */
+    public int[] readImageSize(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+        try {
+            Path path = resolveUrl(imageUrl);
+            if (!Files.exists(path)) {
+                return null;
+            }
+            BufferedImage img = ImageIO.read(path.toFile());
+            if (img == null) {
+                return null;
+            }
+            return new int[]{img.getWidth(), img.getHeight()};
+        } catch (Exception e) {
+            log.warn("读取图片尺寸失败: {}", imageUrl, e);
+            return null;
+        }
+    }
+
+    /**
      * 按 EXIF Orientation 旋转缩略图（仅 JPEG 有该标记）。
      * 常见取值：1=正常 3=180° 6=顺时针90° 8=逆时针90°；读取失败按正常处理。
      */

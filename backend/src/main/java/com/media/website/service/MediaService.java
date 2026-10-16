@@ -209,7 +209,13 @@ public class MediaService {
 
             if ("image".equals(fileType)) {
                 media.setMediaType(Media.MediaType.image);
-                media.setCoverImage(fileUploadService.generateThumbnail(fileUrl, 480));
+                String cover = fileUploadService.generateThumbnail(fileUrl, 480);
+                media.setCoverImage(cover);
+                int[] coverSize = fileUploadService.readImageSize(cover);
+                if (coverSize != null) {
+                    media.setCoverWidth(coverSize[0]);
+                    media.setCoverHeight(coverSize[1]);
+                }
             } else if ("video".equals(fileType)) {
                 media.setMediaType(Media.MediaType.video);
             }

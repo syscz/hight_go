@@ -35,6 +35,10 @@ public class Media {
 
     private String coverImage;
 
+    private Integer coverWidth;
+
+    private Integer coverHeight;
+
     private Integer duration;
 
     private Integer viewCount;

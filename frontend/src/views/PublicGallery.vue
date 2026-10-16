@@ -115,7 +115,9 @@ const decorate = (list) =>
 const floatVars = (item) => ({
   '--f-dur': item._f?.dur,
   '--f-delay': item._f?.delay,
-  '--f-amp': item._f?.amp
+  '--f-amp': item._f?.amp,
+  // 封面已知宽高时按真实比例占位，图片加载不再让瀑布流跳动
+  '--ar': item.coverWidth && item.coverHeight ? `${item.coverWidth} / ${item.coverHeight}` : null
 })
 
 const fetchRandom = async () => {
@@ -294,6 +296,7 @@ onMounted(fetchRandom)
   overflow: hidden;
   background: var(--glass);
   cursor: pointer;
+  aspect-ratio: var(--ar, auto);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 
   img,

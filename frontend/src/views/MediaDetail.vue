@@ -559,7 +559,7 @@ onMounted(async () => {
       gap: 1rem;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--glass-border);
 
       .meta-item {
         display: flex;
@@ -601,7 +601,7 @@ onMounted(async () => {
         margin-bottom: 0.75rem;
 
         .no-tags {
-          color: #999;
+          color: var(--text-muted);
           font-size: 0.9rem;
         }
       }
@@ -645,11 +645,11 @@ onMounted(async () => {
   .comments-section {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--glass-border);
 
     h3 {
       font-size: 1rem;
-      color: #333;
+      color: var(--text-primary);
       margin: 0 0 1rem 0;
     }
 

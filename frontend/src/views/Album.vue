@@ -9,10 +9,14 @@
         <el-button round @click="goBack">← 返回</el-button>
         <template v-if="!sortMode">
           <el-button round :type="coverMode ? 'warning' : 'default'" @click="enterCoverMode" v-if="mediaList.length > 0">
-            {{ coverMode ? '✕ 退出封面选择' : '🖼 封面' }}
+            <el-icon style="margin-right: 4px"><Picture /></el-icon>{{ coverMode ? '退出封面选择' : '封面' }}
           </el-button>
-          <el-button round @click="enterSortMode" v-if="mediaList.length > 1">↕ 排序</el-button>
-          <el-button round type="primary" @click="startSlideshow" v-if="mediaList.length > 0">▶ 播放</el-button>
+          <el-button round @click="enterSortMode" v-if="mediaList.length > 1">
+            <el-icon style="margin-right: 4px"><Sort /></el-icon>排序
+          </el-button>
+          <el-button round type="primary" @click="startSlideshow" v-if="mediaList.length > 0">
+            <el-icon style="margin-right: 4px"><VideoPlay /></el-icon>播放
+          </el-button>
         </template>
         <template v-else>
           <el-button round @click="cancelSort">取消</el-button>
@@ -184,6 +188,7 @@ import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api/index'
 import { resolveMediaUrl, videoPlaySrc, formatDuration } from '@/utils/media'
+import { Picture, Sort, VideoPlay } from '@element-plus/icons-vue'
 import MediaLightbox from '../components/MediaLightbox.vue'
 import EmptyState from '@/components/EmptyState.vue'
 
@@ -976,6 +981,32 @@ onUnmounted(() => {
     .media-title {
       font-size: 0.85rem;
     }
+  }
+}
+
+/* 手机竖屏：3 列紧凑网格（隐藏文字信息，接近 IG 观感） */
+@media (max-width: 600px) {
+  .media-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .media-item {
+    border-radius: 4px;
+
+    .media-info {
+      display: none;
+    }
+
+    .media-checkbox {
+      transform: scale(0.85);
+      transform-origin: top left;
+    }
+  }
+
+  .cover-mode-bar {
+    font-size: 0.8rem;
+    padding: 0.55rem 0.7rem;
   }
 }
 </style>

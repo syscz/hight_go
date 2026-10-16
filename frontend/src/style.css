@@ -79,11 +79,43 @@ body {
 /* 图片加载淡入 */
 .img-fade {
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.45s ease;
+}
+
+/* 加载中：流光骨架，加载完成淡入并停止动画 */
+.img-fade:not(.is-loaded) {
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.11) 50%,
+    rgba(255, 255, 255, 0.05) 60%
+  );
+  background-size: 200% 100%;
+  animation: img-shimmer 1.4s linear infinite;
+}
+
+html[data-theme='light'] .img-fade:not(.is-loaded) {
+  background: linear-gradient(
+    100deg,
+    rgba(15, 30, 50, 0.05) 40%,
+    rgba(15, 30, 50, 0.1) 50%,
+    rgba(15, 30, 50, 0.05) 60%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes img-shimmer {
+  from {
+    background-position: 180% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
 }
 
 .img-fade.is-loaded {
   opacity: 1;
+  animation: none;
 }
 
 /* 浅色主题 */

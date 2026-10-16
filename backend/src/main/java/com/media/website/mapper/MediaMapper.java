@@ -65,6 +65,8 @@ public interface MediaMapper {
     int updateVideoMp4Path(@Param("id") Long id, @Param("videoMp4Path") String videoMp4Path);
 
     int updateCoverAndDuration(@Param("id") Long id, @Param("coverImage") String coverImage,
+                               @Param("coverWidth") Integer coverWidth,
+                               @Param("coverHeight") Integer coverHeight,
                                @Param("duration") Integer duration);
 
     int batchUpdateTitle(@Param("ids") List<Long> ids, @Param("userId") Long userId,

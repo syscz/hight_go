@@ -38,8 +38,12 @@ public class VideoTranscodeService {
             try {
                 Integer duration = probeDuration(media.getFilePath());
                 String cover = extractCover(media.getFilePath());
+                int[] coverSize = fileUploadService.readImageSize(cover);
                 if (duration != null || cover != null) {
-                    mediaMapper.updateCoverAndDuration(media.getId(), cover, duration);
+                    mediaMapper.updateCoverAndDuration(media.getId(), cover,
+                            coverSize != null ? coverSize[0] : null,
+                            coverSize != null ? coverSize[1] : null,
+                            duration);
                     log.info("视频元数据提取完成 mediaId={} cover={} duration={}s",
                             media.getId(), cover, duration);
                 }

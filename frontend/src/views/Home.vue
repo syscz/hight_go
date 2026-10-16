@@ -4,10 +4,10 @@
 
     <nav class="space-tabs">
       <button class="tab-btn" :class="{ active: tab === 'all' }" @click="tab = 'all'">
-        <span class="tab-icon">▦</span>全部
+        <el-icon class="tab-icon"><Grid /></el-icon>全部
       </button>
       <button class="tab-btn" :class="{ active: tab === 'albums' }" @click="tab = 'albums'">
-        <span class="tab-icon">📁</span>相册
+        <el-icon class="tab-icon"><Folder /></el-icon>相册
       </button>
     </nav>
 
@@ -16,8 +16,8 @@
       <div class="space-toolbar">
         <el-radio-group v-model="typeFilter" size="small" class="type-chips" @change="handleFilterChange">
           <el-radio-button label="">全部</el-radio-button>
-          <el-radio-button label="image">🖼 图片</el-radio-button>
-          <el-radio-button label="video">🎬 视频</el-radio-button>
+          <el-radio-button label="image">图片</el-radio-button>
+          <el-radio-button label="video">视频</el-radio-button>
         </el-radio-group>
         <div class="toolbar-right">
           <el-select
@@ -91,7 +91,7 @@
       <div class="albums-head">
         <span class="albums-count">共 {{ albums.length }} 个相册</span>
         <el-button type="primary" round size="small" @click="showCreateAlbumDialog">
-          ➕ 新建相册
+          <el-icon style="margin-right: 4px"><Plus /></el-icon>新建相册
         </el-button>
       </div>
       <div v-loading="loading" class="albums-grid">
@@ -220,7 +220,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Share } from '@element-plus/icons-vue'
+import { Delete, Share, Grid, Folder, Plus } from '@element-plus/icons-vue'
 import api from '@/api/index'
 import { resolveMediaUrl } from '@/utils/media'
 import MediaLightbox from '../components/MediaLightbox.vue'
@@ -748,6 +748,15 @@ onBeforeUnmount(() => {
   &:hover .share-btn {
     opacity: 1;
     transform: scale(1);
+  }
+
+  /* 触屏无 hover：分享/删除按钮常显 */
+  @media (hover: none) {
+    .share-btn,
+    .delete-btn {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   &.has-cover .share-btn {

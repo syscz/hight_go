@@ -58,41 +58,46 @@
         <router-link to="/" class="sidebar-logo">SEE</router-link>
         <nav class="sidebar-nav">
           <router-link to="/" class="side-link">
-            <span class="side-icon">🖼</span><span>照片</span>
+            <el-icon class="side-icon"><Picture /></el-icon><span>照片</span>
           </router-link>
           <router-link to="/upload" class="side-link">
-            <span class="side-icon">⬆️</span><span>上传</span>
+            <el-icon class="side-icon"><UploadFilled /></el-icon><span>上传</span>
           </router-link>
           <router-link to="/?tab=albums" class="side-link">
-            <span class="side-icon">📁</span><span>相册</span>
+            <el-icon class="side-icon"><Folder /></el-icon><span>相册</span>
           </router-link>
           <router-link to="/timeline" class="side-link">
-            <span class="side-icon">🕐</span><span>时间线</span>
+            <el-icon class="side-icon"><Clock /></el-icon><span>时间线</span>
           </router-link>
           <router-link to="/calendar" class="side-link">
-            <span class="side-icon">📅</span><span>日历</span>
+            <el-icon class="side-icon"><Calendar /></el-icon><span>日历</span>
           </router-link>
           <router-link to="/search" class="side-link">
-            <span class="side-icon">🔍</span><span>搜索</span>
+            <el-icon class="side-icon"><Search /></el-icon><span>搜索</span>
           </router-link>
           <router-link to="/trash" class="side-link">
-            <span class="side-icon">🗑</span><span>回收站</span>
+            <el-icon class="side-icon"><Delete /></el-icon><span>回收站</span>
           </router-link>
         </nav>
         <div class="sidebar-bottom">
-          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
-            {{ isDark ? '☀️' : '🌙' }}
-          </button>
-          <img
-            v-if="userStore.user?.avatar"
-            :src="resolveMediaUrl(userStore.user.avatar)"
-            class="bar-avatar"
-            alt="头像"
-          />
-          <span v-else class="bar-avatar bar-avatar--placeholder">{{ avatarInitial }}</span>
-          <span v-if="userStore.isLoggedIn" class="user-name">{{ userStore.displayName }}</span>
-          <button v-if="userStore.isLoggedIn" class="logout-btn" @click="passwordDialogVisible = true">改密码</button>
-          <button v-if="userStore.isLoggedIn" class="logout-btn" @click="handleLogout">退出</button>
+          <div class="sidebar-user-row">
+            <img
+              v-if="userStore.user?.avatar"
+              :src="resolveMediaUrl(userStore.user.avatar)"
+              class="bar-avatar"
+              :title="userStore.displayName"
+              alt="头像"
+            />
+            <span v-else class="bar-avatar bar-avatar--placeholder" :title="userStore.displayName">{{ avatarInitial }}</span>
+            <span v-if="userStore.isLoggedIn" class="user-name" :title="userStore.displayName">{{ userStore.displayName }}</span>
+            <button v-if="userStore.isLoggedIn" class="logout-btn" title="退出登录" @click="handleLogout">⏻</button>
+          </div>
+          <div class="sidebar-actions-row">
+            <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
+              {{ isDark ? '☀️' : '🌙' }}
+            </button>
+            <button v-if="userStore.isLoggedIn" class="logout-btn" @click="passwordDialogVisible = true">改密码</button>
+          </div>
         </div>
       </aside>
 
@@ -106,7 +111,7 @@
             class="global-search"
             @keyup.enter="doGlobalSearch"
           >
-            <template #prefix>🔍</template>
+            <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
         </div>
         <header class="mobile-header">
@@ -126,11 +131,11 @@
       </div>
 
       <nav class="mobile-nav">
-        <router-link to="/" class="mobile-link"><span>🖼</span><span>照片</span></router-link>
-        <router-link to="/?tab=albums" class="mobile-link"><span>📁</span><span>相册</span></router-link>
+        <router-link to="/" class="mobile-link"><el-icon><Picture /></el-icon><span>照片</span></router-link>
+        <router-link to="/?tab=albums" class="mobile-link"><el-icon><Folder /></el-icon><span>相册</span></router-link>
         <router-link to="/upload" class="mobile-link mobile-upload"><span class="upload-plus">＋</span></router-link>
-        <router-link to="/search" class="mobile-link"><span>🔍</span><span>搜索</span></router-link>
-        <router-link to="/calendar" class="mobile-link"><span>📅</span><span>日历</span></router-link>
+        <router-link to="/search" class="mobile-link"><el-icon><Search /></el-icon><span>搜索</span></router-link>
+        <router-link to="/calendar" class="mobile-link"><el-icon><Calendar /></el-icon><span>日历</span></router-link>
       </nav>
     </template>
 
@@ -161,6 +166,7 @@ import { ElMessage } from 'element-plus'
 import api from '@/api/index'
 import { resolveMediaUrl } from '@/utils/media'
 import ModeSwitch from '@/components/ModeSwitch.vue'
+import { Picture, UploadFilled, Folder, Clock, Calendar, Search, Delete } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -434,10 +440,17 @@ html[data-theme='light'] .bare-topbar {
 
   .sidebar-bottom {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 0.5rem;
     padding: 0.75rem 0.5rem 0;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    .sidebar-user-row,
+    .sidebar-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
     .theme-toggle,
     .logout-btn {
@@ -455,13 +468,28 @@ html[data-theme='light'] .bare-topbar {
       }
     }
 
+    .sidebar-actions-row {
+      .theme-toggle {
+        flex: 0 0 auto;
+      }
+      .logout-btn {
+        flex: 1;
+      }
+    }
+
     .user-name {
       color: rgba(255, 255, 255, 0.7);
       font-size: 0.85rem;
-      margin-left: auto;
+      margin-left: 0;
+      flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .sidebar-user-row .logout-btn {
+      flex: 0 0 auto;
+      padding: 0.4rem 0.55rem;
     }
   }
 }
@@ -625,8 +653,8 @@ html[data-theme='light'] .sidebar {
       text-decoration: none;
       font-size: 0.68rem;
 
-      span:first-child {
-        font-size: 1.1rem;
+      .el-icon {
+        font-size: 1.15rem;
       }
 
       &.router-link-active {

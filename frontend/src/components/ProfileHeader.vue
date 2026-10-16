@@ -31,7 +31,7 @@
       </div>
 
       <el-button class="ph-upload" round type="primary" @click="router.push('/upload')">
-        ⬆ 上传
+        <el-icon style="margin-right: 4px"><Upload /></el-icon>上传
       </el-button>
     </div>
   </div>
@@ -44,6 +44,7 @@ import { ElMessage } from 'element-plus'
 import api from '@/api/index'
 import { resolveMediaUrl } from '@/utils/media'
 import { useUserStore } from '@/stores/user'
+import { Upload } from '@element-plus/icons-vue'
 
 defineProps({
   stats: {

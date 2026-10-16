@@ -5,14 +5,14 @@
       :class="{ active: isSquare }"
       @click="goSquare"
     >
-      <span class="ms-icon">🌍</span><span class="ms-text">广场</span>
+      <el-icon class="ms-icon"><Compass /></el-icon><span class="ms-text">广场</span>
     </button>
     <button
       class="ms-btn"
       :class="{ active: !isSquare }"
       @click="goSpace"
     >
-      <span class="ms-icon">👤</span><span class="ms-text">个人空间</span>
+      <el-icon class="ms-icon"><User /></el-icon><span class="ms-text">个人空间</span>
     </button>
   </div>
 </template>
@@ -21,6 +21,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { Compass, User } from '@element-plus/icons-vue'
 
 defineProps({
   /** 紧凑模式：移动端只显示图标 */

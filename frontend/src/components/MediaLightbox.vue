@@ -21,7 +21,12 @@
 
     <button class="lb-nav lb-prev" @click="prev">‹</button>
 
-    <div class="lb-stage">
+    <div
+      class="lb-stage"
+      @touchstart="onTouchStart"
+      @touchmove.prevent="onTouchMove"
+      @touchend="onTouchEnd"
+    >
       <img
         v-if="current.mediaType === 'image'"
         :src="fullUrl(current.filePath)"
@@ -234,6 +239,53 @@ watch(() => props.index, () => {
   resetSocialState()
 })
 
+/* ===== 触屏手势：单指左右滑切换、双指捏合缩放 ===== */
+let touchStartX = 0
+let touchStartY = 0
+let pinchStartDist = 0
+let pinchStartScale = 1
+
+const touchDistance = (touches) => {
+  const dx = touches[0].clientX - touches[1].clientX
+  const dy = touches[0].clientY - touches[1].clientY
+  return Math.hypot(dx, dy)
+}
+
+const onTouchStart = (e) => {
+  if (e.touches.length === 1) {
+    touchStartX = e.touches[0].clientX
+    touchStartY = e.touches[0].clientY
+    pinchStartDist = 0
+  } else if (e.touches.length === 2) {
+    pinchStartDist = touchDistance(e.touches)
+    pinchStartScale = scale.value
+  }
+}
+
+const onTouchMove = (e) => {
+  if (e.touches.length === 2 && pinchStartDist > 0 && current.value?.mediaType === 'image') {
+    const ratio = touchDistance(e.touches) / pinchStartDist
+    scale.value = Math.min(Math.max(pinchStartScale * ratio, 0.5), 5)
+  }
+}
+
+const onTouchEnd = (e) => {
+  // 双指缩放结束：不当作滑动
+  if (pinchStartDist > 0) {
+    pinchStartDist = 0
+    return
+  }
+  const t = e.changedTouches?.[0]
+  if (!t) return
+  const dx = t.clientX - touchStartX
+  const dy = t.clientY - touchStartY
+  // 横向滑动超过 60px 且明显横向：切换上一张/下一张
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (dx > 0) prev()
+    else next()
+  }
+}
+
 const close = () => emit('update:visible', false)
 const prev = () => {
   if (props.items.length > 0) {
@@ -319,9 +371,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 .lb-btn {
   padding: 0.45rem 1rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: white;
   cursor: pointer;
   font-size: 0.85rem;
@@ -337,8 +391,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: white;
   font-size: 1.4rem;
   cursor: pointer;
@@ -358,6 +414,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: white;
   font-size: 2rem;
   cursor: pointer;
@@ -589,6 +647,46 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       text-align: right;
       word-break: break-all;
     }
+  }
+}
+
+/* 触屏/窄屏：顶栏紧凑，侧边箭头隐藏（用滑动手势） */
+@media (max-width: 768px) {
+  .lb-top {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .lb-actions {
+    gap: 0.3rem;
+
+    .lb-btn {
+      padding: 0.38rem 0.6rem;
+      font-size: 0.74rem;
+    }
+
+    .lb-close {
+      width: 34px;
+      height: 34px;
+      font-size: 1.15rem;
+    }
+  }
+
+  .lb-nav {
+    display: none;
+  }
+
+  .lb-caption {
+    bottom: 10px;
+    font-size: 0.82rem;
+    max-width: 92vw;
+  }
+
+  .lb-comments-panel {
+    right: 8px;
+    left: 8px;
+    width: auto;
+    bottom: 56px;
+    max-height: 46vh;
   }
 }
 </style>
